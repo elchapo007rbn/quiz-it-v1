@@ -1,0 +1,37 @@
+# Dependencies and build output
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# Environment and deployment state
+.env*
+!.env.example
+.vercel/
+
+# Test output and logs
+coverage/
+data/results/
+*.log
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Local agent state
+.claude/
+.codex/
+.agents/
+.gemini/
+.continue/
+.cline/
+.roo/
+.kiro/
+.remember/
+AGENTS.md
+CLAUDE.md

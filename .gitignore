@@ -1,37 +1,106 @@
-# Dependencies and build output
-node_modules/
-.next/
-out/
-build/
-dist/
+# Dependencies — reinstalled from package-lock.json, never committed.
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Next.js build output
+/.next/
+/out/
+/build
+next-env.d.ts
+
+# Production
+/dist
+
+# TypeScript incremental build cache
 *.tsbuildinfo
 
-# Environment and deployment state
-.env*
+# Environment — secrets never belong in the repository. Vercel holds the real
+# values in its own project settings; keep .env.example as the documented shape.
+.env
+.env*.local
+.env.development
+.env.production
 !.env.example
-.vercel/
 
-# Test output and logs
-coverage/
-data/results/
-*.log
+# Vercel
+.vercel
 
-# OS and editor files
+# Testing
+/coverage
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# OS
 .DS_Store
 Thumbs.db
 desktop.ini
-.vscode/
-.idea/
 
-# Local agent state
-.claude/
-.codex/
-.agents/
-.gemini/
-.continue/
-.cline/
-.roo/
-.kiro/
+# Editors
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# AI assistant working state — local to each machine, not part of the project.
+# The skills folders are libraries installed per machine by the skills manager,
+# shared across every project on this computer; they describe the developer's
+# tooling, not this funnel, and would add ~54 files of noise to the repository.
 .remember/
-AGENTS.md
-CLAUDE.md
+.claude/settings.local.json
+.claude/skills/
+.codex/
+.gemini/
+.aider*
+.continue/
+
+# Local scratch and reference material kept beside the project while it was
+# reverse-engineered. Useful on this machine, noise in the repository.
+/AUDIO
+/DEPOIMENTOS FINAL
+/LAYOUT MOBILE
+/planejamento-layout
+quiz-v16-8-steps-raw.txt
+start.bat
+
+# Submissões do quiz gravadas em desenvolvimento — contêm nome e e-mail reais
+# digitados durante os testes. Dado pessoal nunca vai para o repositório.
+/data/results/
+
+# Herança do template de clonagem que originou este projeto, e material de
+# apoio produzido durante a engenharia reversa. Nada disso é executado pelo
+# site nem lido por um agente: o contexto que importa vive em AGENTS.md.
+# Mantido no disco, fora do repositório.
+/docs/
+/scripts/sync-skills.mjs
+CHANGELOG.md
+CONTRIBUTING.md
+SECURITY.md
+FLUXO-DE-ESTADO.md
+analise*.md
+
+# Self-hosting via container. O deploy é na Vercel, que constrói direto do
+# repositório; estes arquivos descrevem um caminho alternativo que hoje não é
+# usado e só confundiria quem (ou o quê) abrir o projeto.
+Dockerfile
+Dockerfile.dev
+docker-compose.yml
+.dockerignore
+
+# Áudio sem referência no código — o funil usa apenas audio-quiz-it.wav.
+/public/audio-quiz-soulmate.mp3
+
+# Biblioteca de skills de agente instalada por máquina — mesmo caso de
+# .claude/skills, apenas por outro gerenciador.
+/.agents/
+skills-lock.json

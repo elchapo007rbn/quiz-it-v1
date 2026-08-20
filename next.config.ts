@@ -1,8 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
-
   /**
    * Dev-only. Next blocks cross-origin requests to dev assets and endpoints by
    * default, and only the hostname the server booted with (`localhost`) is

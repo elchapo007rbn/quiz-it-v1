@@ -17,10 +17,19 @@ import Script from 'next/script';
  * 50ms timer inside the tag, and a visitor who bounces off the landing page
  * should still be attributed.
  *
- * The body is the network's own code, pasted unchanged: it is their contract,
- * not ours, and reformatting it would make future snippet updates a diff to
- * reconcile instead of a paste. It is served inline rather than from a file
- * because it must not wait on a second round trip.
+ * The body is the network's own code: it is their contract, not ours, and
+ * reformatting it would make future snippet updates a diff to reconcile instead
+ * of a paste. It is served inline rather than from a file because it must not
+ * wait on a second round trip.
+ *
+ * One deliberate restoration: `reportView` below. The network's hosted tag
+ * (app.auralyapp.com/track.js) calls `/view?clickid=` after writing the cookie
+ * and this transcription had dropped it, which is why the affiliate dashboard
+ * counted clicks with a bare zero next to them under View Quiz. The `/click`
+ * hop that records the checkout step lives in lib/checkout.ts; between them the
+ * two calls account for every column of that dashboard this funnel can reach.
+ * Starquiz and Endquiz cannot be: the producer fires those as Facebook and Bing
+ * pixel events, and there is no pixel on this funnel to fire them into.
  *
  * One dependency worth knowing about: the Meta CAPI builder is pulled from
  * unpkg.com at runtime. It loads `async` and every call is wrapped in
@@ -84,6 +93,7 @@ setTimeout(function () {
                 rawData = JSON.parse(xhr.responseText);
                 rtkClickID = rawData.clickid
                 setCookie();
+                reportView(rtkClickID);
             }
         }
         xhr.open("GET", initialSrc + pixelParams)
@@ -91,8 +101,24 @@ setTimeout(function () {
     } else {
         rtkClickID = urlParams.get('rtkcid')
         setCookie();
+        reportView(rtkClickID);
     }
 }, 5e1)
+
+/**
+ * The network's own tag calls this and the copy here was missing it, which is
+ * the whole reason the dashboard showed clicks with no views beside them. Both
+ * branches report, matching track.js: a visitor who arrived with a click id
+ * already on the URL has still viewed the page.
+ */
+function reportView(clickID) {
+    if (!clickID) return;
+    try {
+        var v = new XMLHttpRequest;
+        v.open("GET", "https://app.auralyapp.com/view?clickid=" + clickID);
+        v.send();
+    } catch (e) { }
+}
 
 function setCookie() {
     var cookieName = "rtkclickid-store", cookieValue = rtkClickID, expirationTime = 86400 * 30 * 1000,

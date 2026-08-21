@@ -23,7 +23,7 @@ function readCookie(name: string): string {
 }
 
 /** Producer's checkout for this offer. Used when the redirector cannot be reached. */
-const CHECKOUT_URL = 'https://quiz.auralyapp.com/checkout/prod_UUDRbhe';
+const CHECKOUT_URL = 'https://quiz.auralyapp.com/checkout-ff/509506ca';
 
 /**
  * The network's own click redirector — the hop the producer's funnel makes and

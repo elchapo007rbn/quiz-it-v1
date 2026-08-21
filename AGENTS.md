@@ -27,6 +27,11 @@ A reusable template for reverse-engineering any website into a clean, modern Nex
 - `npm run typecheck` — TypeScript check
 - `npm run check` — Run lint + typecheck + build
 
+To add a shadcn/ui component, run the CLI without installing it:
+`npx shadcn@latest add <component>` — it reads `components.json`. The package is
+deliberately absent from `package.json`: it is a scaffolding tool, nothing
+imports it, and as a dependency it dragged `msw` into every install.
+
 ## Code Style
 - TypeScript strict mode, no `any`
 - Named exports, PascalCase components, camelCase utils

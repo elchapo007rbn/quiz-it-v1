@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import type { QuizAnswers } from '@/types/quiz';
 import { LOVE_LIFE_OPTIONS, PATTERN_OPTIONS, DESIRE_OPTIONS, IMPORTANCE_OPTIONS, PROGRESS_TARGETS } from '@/data/quizData';
 import { goToCheckout } from '@/lib/checkout';
+import { useAssetPrefetch } from '@/hooks/useAssetPrefetch';
 
 import { Step00Landing } from './steps/Step00Landing';
 import { Step01Gender } from './steps/Step01Gender';
@@ -27,6 +28,10 @@ export function QuizContainer() {
   const [patterns, setPatterns] = useState<string[]>([]);
   const [desires, setDesires] = useState<string[]>([]);
   const [importance, setImportance] = useState<string[]>([]);
+
+  // Spends the question steps' idle bandwidth on the media the later steps will
+  // ask for. See useAssetPrefetch for the measurements behind the schedule.
+  useAssetPrefetch(step);
 
   const next = useCallback(() => setStep(s => s + 1), []);
   const back = useCallback(() => setStep(s => Math.max(0, s - 1)), []);

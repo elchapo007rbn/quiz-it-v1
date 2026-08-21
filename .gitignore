@@ -104,3 +104,6 @@ docker-compose.yml
 # .claude/skills, apenas por outro gerenciador.
 /.agents/
 skills-lock.json
+
+# playwright-cli scratch: session snapshots and one-off measurement scripts
+.playwright-cli/

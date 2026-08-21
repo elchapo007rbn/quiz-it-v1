@@ -113,10 +113,14 @@ export function Step11Audio({ onContinue, progressPct }: Props) {
                 the flat lilac the reader saw is this element's own CSS
                 background showing through an empty video box.
 
-                A second `<source>`. WebM/VP9 decodes on the devices tested, so
-                the MP4 is not the primary path; it is the fallback the other two
-                players already carry and this one was missing, which also gives
-                the browser a second chance when the first source stalls.
+                A second `<source>`, and the MP4 first. Measured on the device
+                that failed: given only the WebM this player reported MediaError
+                4, SRC_NOT_SUPPORTED — TikTok's WebView does not decode VP9, and
+                the flat lilac was an empty video box, not a slow one. MP4 leads
+                rather than trails because for this clip it is both universally
+                playable and the smaller file (373KB against 595KB), and because
+                useAssetPrefetch warms exactly one of the two: a single named
+                file beats asking `canPlayType` and trusting the answer.
 
                 `<video>` carries no `alt`, so the label moves to `aria-label`. */}
             <video
@@ -128,8 +132,8 @@ export function Step11Audio({ onContinue, progressPct }: Props) {
               preload="auto"
               aria-label="Anteprima della lettura"
             >
-              <source src="/images/gif01.webm" type="video/webm" />
               <source src="/images/gif01.mp4" type="video/mp4" />
+              <source src="/images/gif01.webm" type="video/webm" />
             </video>
 
             <audio

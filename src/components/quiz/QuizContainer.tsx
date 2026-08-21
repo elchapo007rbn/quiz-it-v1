@@ -1,9 +1,10 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { QuizAnswers } from '@/types/quiz';
 import { LOVE_LIFE_OPTIONS, PATTERN_OPTIONS, DESIRE_OPTIONS, IMPORTANCE_OPTIONS, PROGRESS_TARGETS } from '@/data/quizData';
 import { goToCheckout } from '@/lib/checkout';
 import { useAssetPrefetch } from '@/hooks/useAssetPrefetch';
+import { trackFunnelEvent } from '@/lib/tracking';
 
 import { Step00Landing } from './steps/Step00Landing';
 import { Step01Gender } from './steps/Step01Gender';
@@ -32,6 +33,22 @@ export function QuizContainer() {
   // Spends the question steps' idle bandwidth on the media the later steps will
   // ask for. See useAssetPrefetch for the measurements behind the schedule.
   useAssetPrefetch(step);
+
+  /**
+   * The two funnel steps the affiliate dashboard tracks between the click and
+   * the checkout. Driven from `step` rather than from the buttons themselves so
+   * the reporting sits in one place and cannot be half-wired: every route into
+   * a step passes through here, including the dev navigator.
+   *
+   * Starquiz on leaving the landing page, which is the moment the reader
+   * commits to the quiz. Endquiz on arriving at step 11, immediately after the
+   * birth-chart screen takes the last answer — the reveal, testimonials and
+   * email that follow are payoff, not questions. See lib/tracking.
+   */
+  useEffect(() => {
+    if (step >= 1) trackFunnelEvent('Starquiz');
+    if (step >= 11) trackFunnelEvent('Endquiz');
+  }, [step]);
 
   const next = useCallback(() => setStep(s => s + 1), []);
   const back = useCallback(() => setStep(s => Math.max(0, s - 1)), []);

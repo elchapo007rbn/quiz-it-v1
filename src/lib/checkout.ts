@@ -15,12 +15,7 @@
  * re-render can undo it.
  */
 
-/** Reads one browser cookie; empty string when it is not set. */
-function readCookie(name: string): string {
-  const parts = `; ${document.cookie}`.split(`; ${name}=`);
-  if (parts.length !== 2) return '';
-  return parts.pop()?.split(';').shift() ?? '';
-}
+import { CLICK_ID_COOKIE, readCookie } from './tracking';
 
 /** Producer's checkout for this offer. Used when the redirector cannot be reached. */
 const CHECKOUT_URL = 'https://quiz.auralyapp.com/checkout-ff/509506ca';
@@ -58,9 +53,6 @@ const REDIRECTOR_TIMEOUT_MS = 2500;
 
 /** Affiliate tag — identifies who gets credited for the sale. */
 const AFFILIATE_ID = '1izpe5h8';
-
-/** Cookie RedTrack writes on this visitor's machine when they arrive from the ad. */
-const CLICK_ID_COOKIE = 'rtkclickid-store';
 
 /**
  * Used when the cookie is missing — an ad blocker, a stripped-down in-app

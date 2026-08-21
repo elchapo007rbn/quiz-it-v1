@@ -35,19 +35,14 @@ export function QuizContainer() {
   useAssetPrefetch(step);
 
   /**
-   * The two funnel steps the affiliate dashboard tracks between the click and
-   * the checkout. Driven from `step` rather than from the buttons themselves so
-   * the reporting sits in one place and cannot be half-wired: every route into
-   * a step passes through here, including the dev navigator.
+   * Starquiz: leaving the landing page, the moment the reader commits.
    *
-   * Starquiz on leaving the landing page, which is the moment the reader
-   * commits to the quiz. Endquiz on arriving at step 11, immediately after the
-   * birth-chart screen takes the last answer — the reveal, testimonials and
-   * email that follow are payoff, not questions. See lib/tracking.
+   * Driven from `step` rather than from the button so it cannot end up
+   * half-wired — every route into step 1 passes through here, the dev navigator
+   * included. Endquiz is deliberately not here; see step 14 below.
    */
   useEffect(() => {
     if (step >= 1) trackFunnelEvent('Starquiz');
-    if (step >= 11) trackFunnelEvent('Endquiz');
   }, [step]);
 
   const next = useCallback(() => setStep(s => s + 1), []);
@@ -184,6 +179,11 @@ export function QuizContainer() {
               const final = { ...answers, email: e, patterns, desires, importance };
               setAnswers(final);
               saveResults(final);
+              // Endquiz reports here rather than on a step change, because this
+              // callback only runs once the address has passed the step's own
+              // validation. Reaching the screen means nothing; leaving it with
+              // an email is the signal the dashboard is asking about.
+              trackFunnelEvent('Endquiz');
               next();
             }}
             progressPct={pct(14)}

@@ -107,3 +107,10 @@ skills-lock.json
 
 # playwright-cli scratch: session snapshots and one-off measurement scripts
 .playwright-cli/
+
+# Ferramentas internas: geradores de link com IDs de campanha e afiliado.
+# Nao vao para o repositorio publico.
+tools/
+
+# Cache das buscas do firecrawl.
+.firecrawl/

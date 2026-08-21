@@ -1631,6 +1631,31 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   NO-SAVE IMAGES — same lock already applied to the step 12 portraits
+   (see .ss-imgwrap img). `pointer-events: none` is what stops the long-press
+   save sheet on iOS and Android: with no hit target there is no image to
+   offer. The callout, select and drag properties close the same door on
+   desktop and older WebViews. Every selector below is a decorative image
+   that never takes a click, so removing its hit target costs nothing.
+   ═══════════════════════════════════════════════════════════════════════ */
+.chat-typing img,          /* step 8, 9  — Maestra Aura */
+.chat-bubble img,          /* step 8, 9  — Maestra Aura */
+.vm-typing img,            /* step 11    — Maestra Aura */
+.vm-bubble img,            /* step 11    — Maestra Aura */
+.vm-arow > img,            /* step 11    — Maestra Aura */
+.lr-typing img,            /* step 13    — Maestra Aura */
+.lr-location img,          /* step 13    — Maestra Aura */
+.lr-bubble img.lr-avatar,  /* step 13    — Maestra Aura */
+.lr-image img.lr-bg,       /* step 13    — the natal-chart letter */
+.vm-avid {                 /* step 11    — the decorative loop, a <video> of ours */
+  pointer-events: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
    DEV-ONLY STEP NAVIGATOR — not part of the funnel.
    Rendered only when NODE_ENV === 'development' (see DevStepNav.tsx), so
    `next build` never emits the markup. Delete this block together with

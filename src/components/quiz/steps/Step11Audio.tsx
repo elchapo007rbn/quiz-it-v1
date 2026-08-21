@@ -103,14 +103,34 @@ export function Step11Audio({ onContinue, progressPct }: Props) {
               </div>
             </div>
 
+            {/* Matched to the step 0 and step 3 players, which are the two that
+                do render inside TikTok's in-app browser. This one differed from
+                them in exactly two ways and rendered nothing on either iPhone or
+                Android:
+
+                `preload="auto"`. Without it WebKit defers fetching media data,
+                and a muted autoplay that never gets data never paints a frame —
+                the flat lilac the reader saw is this element's own CSS
+                background showing through an empty video box.
+
+                A second `<source>`. WebM/VP9 decodes on the devices tested, so
+                the MP4 is not the primary path; it is the fallback the other two
+                players already carry and this one was missing, which also gives
+                the browser a second chance when the first source stalls.
+
+                `<video>` carries no `alt`, so the label moves to `aria-label`. */}
             <video
-              src="/images/gif01.webm"
+              className="vm-avid"
               autoPlay
               loop
               muted
               playsInline
-              className="vm-avid"
-            />
+              preload="auto"
+              aria-label="Anteprima della lettura"
+            >
+              <source src="/images/gif01.webm" type="video/webm" />
+              <source src="/images/gif01.mp4" type="video/mp4" />
+            </video>
 
             <audio
               ref={audioRef}

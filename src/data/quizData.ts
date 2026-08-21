@@ -137,7 +137,7 @@ export const ZODIAC_SIGNS: readonly ZodiacSign[] = [
 export const SIGN_BY_NAME = new Map(ZODIAC_SIGNS.map(s => [s.name, s]));
 
 /** Master Aura's avatar — reused by every chat bubble across steps 8–13. */
-export const AURA_AVATAR = '/images/aura-avatar.png';
+export const AURA_AVATAR = '/images/aura-avatar.webp';
 
 // `value` is the key persisted in answers and posted to /api/quiz — it stays in
 // English so saved results keep the same shape. Only `label` is ever displayed.
@@ -232,12 +232,12 @@ export const PAYWALL_ROWS = [
 
 /** Step 15 — Facebook-style testimonial screenshots for the carousel. */
 export const PAYWALL_CAROUSEL = [
-  '/images/testimonial-fb-1.png',
-  '/images/testimonial-fb-2.png',
-  '/images/testimonial-fb-3.png',
-  '/images/testimonial-fb-4.png',
-  '/images/testimonial-fb-5.png',
-  '/images/testimonial-fb-6.png',
+  '/images/testimonial-fb-1.webp',
+  '/images/testimonial-fb-2.webp',
+  '/images/testimonial-fb-3.webp',
+  '/images/testimonial-fb-4.webp',
+  '/images/testimonial-fb-5.webp',
+  '/images/testimonial-fb-6.webp',
 ] as const;
 
 /** The preview portrait depends on who the user said they're interested in. */

@@ -114,7 +114,7 @@ export function Step11Audio({ onContinue, progressPct }: Props) {
 
             <audio
               ref={audioRef}
-              src="/audio-quiz-it.wav"
+              src="/audio-quiz-it.m4a"
               preload="metadata"
               onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
               onTimeUpdate={e => setCurrent(e.currentTarget.currentTime)}

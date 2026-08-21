@@ -46,6 +46,7 @@ const PLAYER = 'https://player-vz-b2ed02ae-754.tv.pandavideo.com.br';
 const CONFIG = 'https://config.tv.pandavideo.com.br';
 const STREAM = 'https://b-vz-b2ed02ae-754.tv.pandavideo.com.br';
 const VIDEO = '210c596f-528e-4119-bd50-170592a200a2';
+const LIBRARY = 'vz-b2ed02ae-754';
 
 export function PandaPreload() {
   return (
@@ -68,6 +69,29 @@ export function PandaPreload() {
           cache key rather than the iframe's. 42KB, and it is what the reader
           looks at during the second or two the embed spends booting. */}
       <link rel="preload" as="image" href={`${STREAM}/${VIDEO}/thumbnail.jpg`} />
+
+      {/* The three small fetches from Panda's snippet, kept while its three CSS
+          preloads stay dropped. Measured from the instant step 15 mounts, on a
+          throttled connection:
+
+            +1785ms  PANDA_READY     the player shell — 159KB of CSS and its JS
+            +2428ms  panda_ready
+            +3176ms  panda_progress  first video segments
+            +4057ms  panda_canplay   first frame
+            +4100ms  panda_play
+
+          The middle slice is these three files. They are a few KB against the
+          CSS's 159KB, so the partitioning risk that disqualified the rest costs
+          almost nothing here: if the iframe cannot reuse them the waste is
+          negligible, and if it can, the config round trips are already paid.
+          Whether WebKit — which is what TikTok's in-app browser runs, and which
+          partitions differently from Chrome — reuses them is not something this
+          machine can test; the field is the only place that answers it.
+
+          No `crossorigin`, matching Panda's own snippet. */}
+      <link rel="preload" as="fetch" href={`${CONFIG}/${LIBRARY}/${VIDEO}.json`} />
+      <link rel="preload" as="fetch" href={`${CONFIG}/${LIBRARY}/config.json`} />
+      <link rel="preload" as="fetch" href={`${STREAM}/${VIDEO}/playlist.m3u8`} />
     </>
   );
 }

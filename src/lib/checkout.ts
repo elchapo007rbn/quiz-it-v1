@@ -26,7 +26,7 @@ function readCookie(name: string): string {
 const CHECKOUT_URL = 'https://quiz.auralyapp.com/checkout-ff/509506ca';
 
 /** Affiliate tag — identifies who gets credited for the sale. */
-const AFFILIATE_ID = '1i';
+const AFFILIATE_ID = '1izpe5h8';
 
 /** Cookie RedTrack writes on this visitor's machine when they arrive from the ad. */
 const CLICK_ID_COOKIE = 'rtkclickid-store';

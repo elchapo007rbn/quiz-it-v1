@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Dancing_Script, Fraunces, Playfair_Display, DM_Sans } from "next/font/google";
 import "./globals.css";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { RedTrack } from "@/components/RedTrack";
 
 // Every family the original funnel declares, self-hosted by next/font and exposed
@@ -97,6 +98,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             Placing it as a direct child of <html> is invalid markup and breaks
             hydration. See RedTrack. */}
         <RedTrack />
+        {/* Real-user Core Web Vitals, reported with the visitor's connection
+            type. That pairing is the point: this funnel is served into TikTok's
+            in-app browser over mobile data, where a page that loads instantly
+            on a desk Wi-Fi can fail to load at all — the failure mode that made
+            step 11 ship a 13.8MB payload nobody could download. Local testing
+            cannot see it; only field data can.
+
+            Inert until Speed Insights is enabled for the project in the Vercel
+            dashboard, and it self-disables outside production. */}
+        <SpeedInsights />
       </body>
     </html>
   );

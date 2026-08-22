@@ -558,7 +558,7 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
      this box's flat black. Painting the cover here fills that gap with the
      frame the player is about to show anyway, so the swap is invisible.
      Black stays underneath as the fallback while the image itself loads. */
-  background: #000 url('https://b-vz-b2ed02ae-754.tv.pandavideo.com.br/210c596f-528e-4119-bd50-170592a200a2/thumbnail.jpg') center / cover no-repeat;
+  background: #000 url('https://b-vz-b2ed02ae-754.tv.pandavideo.com.br/2d1f413c-6c10-4b25-97c8-60c42bbd0ec8/thumbnail.jpg') center / cover no-repeat;
   position: relative;
 }
 

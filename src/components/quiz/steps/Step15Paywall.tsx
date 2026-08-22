@@ -189,8 +189,8 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
           <div className={`pw-vsl-player-wrap${playerReady ? ' is-ready' : ''}`}>
             <iframe
               ref={playerRef}
-              id="panda-210c596f-528e-4119-bd50-170592a200a2"
-              src="https://player-vz-b2ed02ae-754.tv.pandavideo.com.br/embed/?v=210c596f-528e-4119-bd50-170592a200a2"
+              id="panda-2d1f413c-6c10-4b25-97c8-60c42bbd0ec8"
+              src="https://player-vz-b2ed02ae-754.tv.pandavideo.com.br/embed/?v=2d1f413c-6c10-4b25-97c8-60c42bbd0ec8"
               title="La Lettura della Tua Anima Gemella"
               allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture"
               allowFullScreen

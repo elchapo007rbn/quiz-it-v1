@@ -45,7 +45,7 @@
 const PLAYER = 'https://player-vz-b2ed02ae-754.tv.pandavideo.com.br';
 const CONFIG = 'https://config.tv.pandavideo.com.br';
 const STREAM = 'https://b-vz-b2ed02ae-754.tv.pandavideo.com.br';
-const VIDEO = '210c596f-528e-4119-bd50-170592a200a2';
+const VIDEO = '2d1f413c-6c10-4b25-97c8-60c42bbd0ec8';
 const LIBRARY = 'vz-b2ed02ae-754';
 
 export function PandaPreload() {

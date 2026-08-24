@@ -94,21 +94,16 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
   useEffect(() => {
     const saved = readSession();
 
-    if (saved?.ctaUnlocked || SKIP_GATE_IN_DEV) {
-      setRevealed(true);
-      return;
-    }
-
-    const wait = gateRemaining(REVEAL_AT, saved?.videoWatched ?? 0);
-
-    if (wait === 0) {
-      writeSession({ ctaUnlocked: true });
-      setRevealed(true);
-      return;
-    }
+    // ctaUnlocked and the dev skip open instantly — as a 0ms timeout rather
+    // than a synchronous set, which is the same trick the pre-plan gate used
+    // for its alreadyRevealed path.
+    const instant = saved?.ctaUnlocked === true || SKIP_GATE_IN_DEV;
+    const wait = instant ? 0 : gateRemaining(REVEAL_AT, saved?.videoWatched ?? 0);
 
     const t = setTimeout(() => {
-      writeSession({ ctaUnlocked: true });
+      // The dev skip must stay out of the blob; a session already unlocked
+      // has nothing to write.
+      if (!instant) writeSession({ ctaUnlocked: true });
       setRevealed(true);
     }, wait * 1000);
 

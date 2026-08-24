@@ -52,6 +52,7 @@ export function QuizContainer() {
   useEffect(() => {
     const saved = readSession();
     if (!saved) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync restore is intentional: post-paint by design, the one-frame cost is the accepted trade documented above.
     setStep(saved.step);
     setAnswers(saved.answers);
     setPatterns(saved.patterns);

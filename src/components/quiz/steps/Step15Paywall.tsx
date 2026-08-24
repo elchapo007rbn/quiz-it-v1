@@ -156,8 +156,15 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
       const seconds = readVturbSeconds();
       if (seconds === null) return;
 
+      // Update an existing session only — never create one. The checkout CTA
+      // clears the blob and then navigates, and this interval survives into
+      // that window: one more tick with the video still playing was observed
+      // resurrecting the blob from a null read. A watch position with no
+      // funnel context is worthless, so a missing session means stop, not
+      // start over.
       const saved = readSession();
-      if (seconds > (saved?.videoWatched ?? 0)) {
+      if (saved === null) return;
+      if (seconds > saved.videoWatched) {
         writeSession({ videoWatched: seconds });
       }
     }, 5000);

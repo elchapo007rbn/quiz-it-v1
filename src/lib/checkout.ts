@@ -16,6 +16,7 @@
  */
 
 import { CLICK_ID_COOKIE, readCookie } from './tracking';
+import { clearSession } from './session';
 
 /** Producer's checkout for this offer. Used when the redirector cannot be reached. */
 const CHECKOUT_URL = 'https://quiz.auralyapp.com/checkout-ff/509506ca';
@@ -174,6 +175,14 @@ export async function resolveCheckoutUrl(data: CheckoutHandoff): Promise<string>
  */
 export function goToCheckout(data: CheckoutHandoff): void {
   void resolveCheckoutUrl(data).then(url => {
+    // Cleared here rather than on the checkout's thank-you page, which is on
+    // another origin and cannot reach this storage. A reader who comes back
+    // afterwards should arrive as a new lead rather than resuming a funnel run
+    // they already finished.
+    //
+    // Cleared before the assignment, not after: `window.location.href` starts a
+    // navigation, and anything queued behind it may never run.
+    clearSession();
     window.location.href = url;
   });
 }

@@ -4,7 +4,7 @@
  * The producer's own funnel (quiz.auralyapp.com) fires these through an
  * `Image().src` pixel at `postback?format=img&type=…&clickid=…` — confirmed by
  * reading their bundle and by a live test (real click id, format=img → the
- * dashboard's StartQuiz column incremented after the network's 5-minute sync).
+ * dashboard's Starquiz column incremented after the network's 5-minute sync).
  * The same endpoint without `format=img` (a fetch, no image) answers 200 with a
  * JSON body and de-duplicates identically, which is what this file called
  * before — it looked like a success and never appeared on the dashboard, across
@@ -36,15 +36,20 @@ const POSTBACK = 'https://app.auralyapp.com/postback';
 const sent = new Set<string>();
 
 /**
- * Exactly the strings the network's own funnel sends — `StartQuiz` with the
- * capital Q, not the `Starquiz` this file used to send and not the spelling the
- * dashboard column uses. Intercepting `Image.src` on quiz.auralyapp.com caught
- * it firing `type=StartQuiz`, and the mismatch explains the numbers: `Endquiz`
- * was already spelled the way they spell it and counted 22, while `Starquiz`
- * sat at 0 across ~200 clicks. The endpoint accepts any string, so a wrong one
- * fails as a success.
+ * One caveat on `Starquiz`, kept here so it is not rediscovered from scratch.
+ *
+ * Intercepting `Image.src` on the producer's own funnel caught it sending
+ * `type=StartQuiz` — capital Q, a spelling this file has never used. Over the
+ * same period the dashboard read 0 Starquiz against ~200 clicks while `Endquiz`,
+ * which matches their spelling exactly, counted 22. The endpoint accepts any
+ * string and answers 200, so a wrong `type` fails as a success and shows up
+ * nowhere.
+ *
+ * The spelling below is `Starquiz` by explicit decision, not by oversight. If
+ * the column stays at zero after `format=img` has had a full sync to land, this
+ * one word is the next thing to change.
  */
-export type FunnelEvent = 'StartQuiz' | 'Endquiz';
+export type FunnelEvent = 'Starquiz' | 'Endquiz';
 
 /**
  * Reports one funnel step, or does nothing.

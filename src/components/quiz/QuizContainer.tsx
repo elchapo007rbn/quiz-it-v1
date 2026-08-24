@@ -5,6 +5,7 @@ import { LOVE_LIFE_OPTIONS, PATTERN_OPTIONS, DESIRE_OPTIONS, IMPORTANCE_OPTIONS,
 import { goToCheckout } from '@/lib/checkout';
 import { useAssetPrefetch } from '@/hooks/useAssetPrefetch';
 import { trackFunnelEvent } from '@/lib/tracking';
+import { readSession, writeSession } from '@/lib/session';
 
 import { Step00Landing } from './steps/Step00Landing';
 import { Step01Gender } from './steps/Step01Gender';
@@ -35,14 +36,65 @@ export function QuizContainer() {
   useAssetPrefetch(step);
 
   /**
-   * StartQuiz: leaving the landing page, the moment the reader commits.
+   * Restores a session left behind when the TikTok bottom sheet was dismissed.
+   *
+   * In an effect rather than a `useState` initializer, and that is not a style
+   * choice: this page is statically prerendered, so the server render and the
+   * first client render must agree. Reading `localStorage` while seeding state
+   * would make them disagree and break hydration.
+   *
+   * The cost is one frame on step 0 before the jump. The alternative — holding
+   * the first paint until the restore runs — would delay the landing page for
+   * every first-time visitor to spare returning ones a flicker, and this funnel
+   * is served over mobile data into an in-app WebView where first paint is the
+   * expensive thing. One frame is the cheaper trade.
+   */
+  useEffect(() => {
+    const saved = readSession();
+    if (!saved) return;
+    setStep(saved.step);
+    setAnswers(saved.answers);
+    setPatterns(saved.patterns);
+    setDesires(saved.desires);
+    setImportance(saved.importance);
+  }, []);
+
+  /**
+   * Mirrors every state change into storage.
+   *
+   * Covers both cases the spec asks for at once: a step change, and an answer
+   * recorded on a step the reader has not left yet. Step 0 with untouched
+   * answers is skipped so that merely opening the funnel does not write a blob
+   * that would later be restored into the same state it already had.
+   */
+  useEffect(() => {
+    const untouched =
+      step === 0 &&
+      !answers.gender &&
+      !answers.interest &&
+      patterns.length === 0 &&
+      desires.length === 0 &&
+      importance.length === 0;
+    if (untouched) return;
+
+    writeSession({ step, answers, patterns, desires, importance });
+  }, [step, answers, patterns, desires, importance]);
+
+  /**
+   * Starquiz: leaving the landing page, the moment the reader commits.
    *
    * Driven from `step` rather than from the button so it cannot end up
    * half-wired — every route into step 1 passes through here, the dev navigator
-   * included. Endquiz is deliberately not here; see step 14 below.
+   * included. A restored session satisfies `step >= 1` too, so someone who
+   * resumes mid-quiz is still counted.
+   *
+   * Endquiz is deliberately not here. The branch this was merged from moved it
+   * to `step >= 11`; that was reverted on purpose, because Endquiz is meant to
+   * mean "lead captured with a valid email", which only step 14 can know. See
+   * the call site there.
    */
   useEffect(() => {
-    if (step >= 1) trackFunnelEvent('StartQuiz');
+    if (step >= 1) trackFunnelEvent('Starquiz');
   }, [step]);
 
   const next = useCallback(() => setStep(s => s + 1), []);

@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { readSession, writeSession, gateRemaining } from '@/lib/session';
+import { readVturbSeconds } from '@/lib/vturbTime';
 import {
   FAQ_ITEMS,
   PAYWALL_BENEFITS,
@@ -33,7 +35,6 @@ const PLAYER_SCRIPT_ID = 'vturb-loader';
 const PLAYER_SCRIPT =
   'https://scripts.converteai.net/0734bb83-01f8-4b0e-88eb-772e50cba793' +
   '/players/6a8c3ef348dab67a9e65468a/v4/player.js';
-const REVEALED_KEY = 'auraly_revealed';
 
 /**
  * ⚠️ DEVELOPMENT-ONLY: opens the gated offer block immediately so it can be
@@ -79,16 +80,38 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
   // "Both" has no dedicated portrait in the original — it falls back to male.
   const preview = interest === 'female' ? SOULMATE_PREVIEW.female : SOULMATE_PREVIEW.male;
 
-  // Unlock after REVEAL_AT seconds on the page, and remember it for this session
-  // so a reload doesn't re-gate someone who already waited it out. The storage read
-  // has to happen post-mount — sessionStorage doesn't exist during SSR, so seeding it
-  // into useState would desync hydration.
+  /**
+   * Opens the offer after REVEAL_AT seconds — minus whatever the reader already
+   * watched on a previous visit.
+   *
+   * The old version restarted the full 3:48 on every arrival and remembered
+   * nothing past a dismissed bottom sheet. Someone who had watched 3:20, closed
+   * TikTok's sheet by accident and come back was made to wait the whole gate
+   * again. That reader was the closest one to buying.
+   *
+   * Reads storage post-mount for the same hydration reason the old code did.
+   */
   useEffect(() => {
-    const alreadyRevealed = sessionStorage.getItem(REVEALED_KEY) === '1';
-    const t = setTimeout(() => {
-      sessionStorage.setItem(REVEALED_KEY, '1');
+    const saved = readSession();
+
+    if (saved?.ctaUnlocked || SKIP_GATE_IN_DEV) {
       setRevealed(true);
-    }, (alreadyRevealed || SKIP_GATE_IN_DEV) ? 0 : REVEAL_AT * 1000);
+      return;
+    }
+
+    const wait = gateRemaining(REVEAL_AT, saved?.videoWatched ?? 0);
+
+    if (wait === 0) {
+      writeSession({ ctaUnlocked: true });
+      setRevealed(true);
+      return;
+    }
+
+    const t = setTimeout(() => {
+      writeSession({ ctaUnlocked: true });
+      setRevealed(true);
+    }, wait * 1000);
+
     return () => clearTimeout(t);
   }, []);
 
@@ -121,10 +144,36 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
     document.head.appendChild(s);
   }, []);
 
+  /**
+   * Keeps `videoWatched` current while the VSL plays.
+   *
+   * Persisted as the furthest point reached rather than the live position: the
+   * player lets the reader scrub, and rewinding to re-hear a line should not
+   * take back credit already earned toward the gate.
+   *
+   * Five seconds between writes, per the spec. The player is polled rather than
+   * subscribed to because its `onTime` hook did not fire with a plain callback
+   * when tested against the live instance, and a poll cannot go stale if the
+   * vendor changes that hook's signature.
+   */
+  useEffect(() => {
+    const id = setInterval(() => {
+      const seconds = readVturbSeconds();
+      if (seconds === null) return;
+
+      const saved = readSession();
+      if (seconds > (saved?.videoWatched ?? 0)) {
+        writeSession({ videoWatched: seconds });
+      }
+    }, 5000);
+
+    return () => clearInterval(id);
+  }, []);
+
   // Escape hatch the original ships too, for QA without sitting through the VSL.
   useEffect(() => {
     (window as unknown as { revealNow: () => void }).revealNow = () => {
-      sessionStorage.setItem(REVEALED_KEY, '1');
+      writeSession({ ctaUnlocked: true });
       setRevealed(true);
     };
   }, []);

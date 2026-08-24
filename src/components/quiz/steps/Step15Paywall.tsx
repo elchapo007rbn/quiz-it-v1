@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   FAQ_ITEMS,
   PAYWALL_BENEFITS,
@@ -19,6 +19,20 @@ interface Props {
 
 /** Seconds of VSL watched before the offer unlocks — 03:48 in the original. */
 const REVEAL_AT = 228;
+
+/**
+ * The VSL, on VTurb. Both ids come from the embed the account issues: the outer
+ * one names the player configuration, the inner one the video itself.
+ *
+ * VslPreload warms these hosts from step 13, and unlike the iframe it replaces
+ * that warming actually lands — the loader and the manifest are fetched by this
+ * document, under this document's cache key.
+ */
+const PLAYER_ELEMENT_ID = 'vid-6a8c3ef348dab67a9e65468a';
+const PLAYER_SCRIPT_ID = 'vturb-loader';
+const PLAYER_SCRIPT =
+  'https://scripts.converteai.net/0734bb83-01f8-4b0e-88eb-772e50cba793' +
+  '/players/6a8c3ef348dab67a9e65468a/v4/player.js';
 const REVEALED_KEY = 'auraly_revealed';
 
 /**
@@ -53,27 +67,6 @@ function Cta({ onClick, style }: { onClick: () => void; style?: React.CSSPropert
 
 export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
   const [revealed, setRevealed] = useState(false);
-  /** True once the Panda player has a frame to show — see the effect below. */
-  const [playerReady, setPlayerReady] = useState(false);
-  const playerRef = useRef<HTMLIFrameElement>(null);
-
-  /**
-   * Tapping the picture toggles playback, the way the player behaves when it is
-   * opened on its own. Inside an iframe that gesture is lost: the click lands in
-   * a document from another origin and cannot be read from here, so the only way
-   * to pause was the small button in the control bar.
-   *
-   * Panda exposes a command channel over postMessage, so the overlay catches the
-   * tap on our side and forwards `togglePlay`. The origin is passed explicitly
-   * rather than `*` so the command is delivered to the player and to nothing
-   * else, even if the iframe is ever pointed somewhere unexpected.
-   */
-  const togglePlay = () => {
-    playerRef.current?.contentWindow?.postMessage(
-      { type: 'togglePlay' },
-      'https://player-vz-b2ed02ae-754.tv.pandavideo.com.br'
-    );
-  };
   const [countdown, setCountdown] = useState(15 * 60);
   const [viewers, setViewers] = useState(127);
   const [slide, setSlide] = useState(0);
@@ -100,36 +93,32 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
   }, []);
 
   /**
-   * Reveals the player only once it actually has something to paint.
+   * Boots the player.
    *
-   * The iframe mounts in ~150ms and immediately covers the wrapper's cover image
-   * with its own empty background, which is the blank flash on arriving at this
-   * step. Panda broadcasts its lifecycle over postMessage, so instead of
-   * guessing a delay we wait for the event that means "there is media to show":
-   * `canplay` fires around 850ms, `play` at the same moment when autoplay is on.
-   * Until then the iframe stays transparent and the cover is what the viewer
-   * sees.
+   * Its loader is a 12KB script that finds `#vid-…`, mounts a custom element in
+   * this document and starts playback. Injecting it from an effect rather than
+   * rendering a `<script>` tag is what guarantees the element exists first —
+   * the loader reads it synchronously on execution and has nothing to attach to
+   * if it runs earlier.
    *
-   * The origin is checked because any page in any tab can post to this window.
-   * Payloads arrive as objects or as JSON strings depending on the event, hence
-   * the parse attempt.
+   * Nothing here tracks readiness or forwards taps, which is the point of the
+   * move off the iframe. The player runs in this document with its own controls
+   * and its own placeholder, so the cover image, the `playerReady` gate and the
+   * `postMessage` toggle that stood in for a cross-origin gesture all went with
+   * it. Sound follows the same route: `smartAutoPlay.autoUnmute` starts the
+   * video muted, which is the only autoplay a browser allows, and paints its own
+   * prompt over it for the tap that turns sound on.
+   *
+   * The guard matters on this step specifically — React runs effects twice in
+   * development, and a second loader would mount a second player.
    */
   useEffect(() => {
-    const onMessage = (e: MessageEvent) => {
-      if (!e.origin.includes('pandavideo')) return;
-      let data: unknown = e.data;
-      if (typeof data === 'string') {
-        try { data = JSON.parse(data); } catch { /* plain string event */ }
-      }
-      const kind =
-        typeof data === 'string'
-          ? data
-          : (data as { message?: string; type?: string })?.message ??
-            (data as { message?: string; type?: string })?.type;
-      if (kind === 'panda_canplay' || kind === 'panda_play') setPlayerReady(true);
-    };
-    window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
+    if (document.getElementById(PLAYER_SCRIPT_ID)) return;
+    const s = document.createElement('script');
+    s.id = PLAYER_SCRIPT_ID;
+    s.src = PLAYER_SCRIPT;
+    s.async = true;
+    document.head.appendChild(s);
   }, []);
 
   // Escape hatch the original ships too, for QA without sitting through the VSL.
@@ -175,43 +164,28 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
             La Lettura della Tua Anima Gemella<br /><em>È Pronta per Essere Svelata</em>
           </h1>
           <p className="pw-vsl-sub">Guarda il video qui sotto e scopri la tua strada verso l’amore vero</p>
-          {/* Panda Video embed, 1:1 — the same ratio the local vsl.mp4 had, so the
-              block keeps its exact height. The wrapper owns the ratio (see
-              .pw-vsl-player-wrap) rather than the inline `padding-top:100%` div
-              Panda hands out, which would nest a second positioning context
-              inside one that already exists.
+          {/* The player mounts itself into this element — see the loader effect
+              above. The inner div is the placeholder VTurb ships: it holds the
+              1:1 box open with `padding: 100% 0 0` and paints black underneath,
+              so nothing reflows when the video takes over.
 
-              The dropped `onTimeUpdate` did not carry the gate: REVEAL_AT is
-              enforced by the `setTimeout` above, which counts time on the page
-              and is what actually unlocks the offer. The video handler only
-              duplicated it — and let a viewer skip ahead to unlock early, which
-              a cross-origin iframe now closes off. */}
-          <div className={`pw-vsl-player-wrap${playerReady ? ' is-ready' : ''}`}>
-            <iframe
-              ref={playerRef}
-              id="panda-2d1f413c-6c10-4b25-97c8-60c42bbd0ec8"
-              src="https://player-vz-b2ed02ae-754.tv.pandavideo.com.br/embed/?v=2d1f413c-6c10-4b25-97c8-60c42bbd0ec8"
-              title="La Lettura della Tua Anima Gemella"
-              allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture"
-              allowFullScreen
-              // Panda's snippet also carries `fetchpriority="high"`. Dropped, not
-              // forgotten: Priority Hints defines that attribute for img, link and
-              // script only — on an iframe it is inert, which is why React does not
-              // type it. Nothing is lost by leaving it out.
-            />
-            {/* Catches the tap anywhere on the picture and forwards it as a
-                play/pause toggle. Stops short of the control bar (see
-                .pw-vsl-tap) so the scrubber, volume and fullscreen keep taking
-                their own clicks. Only mounted once the player is ready — before
-                that there is nothing to toggle and it would only swallow taps. */}
-            {playerReady && (
-              <button
-                type="button"
-                className="pw-vsl-tap"
-                onClick={togglePlay}
-                aria-label="Riproduci o metti in pausa il video"
+              That placeholder is why the wrapper no longer paints a cover image
+              or fades itself in. Both existed to cover the blank an iframe left
+              while it booted, and the player now covers its own.
+
+              REVEAL_AT is untouched by any of this. It counts time on the page,
+              not video progress — which is deliberate, since progress can be
+              scrubbed and the offer would unlock early. */}
+          <div className="pw-vsl-player-wrap">
+            <vturb-smartplayer
+              id={PLAYER_ELEMENT_ID}
+              style={{ display: 'block', margin: '0 auto', width: '100%', maxWidth: 400 }}
+            >
+              <div
+                className="vturb-player-placeholder"
+                style={{ position: 'relative', width: '100%', padding: '100% 0 0', zIndex: 0, backgroundColor: 'black' }}
               />
-            )}
+            </vturb-smartplayer>
           </div>
         </div>
       </div>

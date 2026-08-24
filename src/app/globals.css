@@ -539,76 +539,18 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
 
 .pw-vsl-player-wrap {
   width: 100%;
-  /* 1:1, the ratio the local vsl.mp4 (720x720) rendered at, so swapping in the
-     Panda embed leaves the block's height untouched. `padding-top` rather than
-     `aspect-ratio` because the funnel is served into TikTok's in-app WebView,
-     where the engine version is whatever the app ships — the percentage-padding
-     trick works everywhere, `aspect-ratio` needs Safari 15+.
-     Panda's snippet wraps the iframe in its own padding-top div; that is what
-     this replaces, since .pw-vsl-player-wrap is already the positioned parent
-     and nesting a second one would only add a redundant layer. */
-  padding-top: 100%;
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 8px 30px -10px rgba(27, 20, 70, .18);
-  /* The video's own cover frame, standing in until the iframe paints over it.
-     The old `<video preload="metadata">` showed a first frame almost at once;
-     the embed cannot, because it has to fetch its HTML, ~159KB of CSS and its
-     JS before it can draw its own thumbnail — and until then the reader saw
-     this box's flat black. Painting the cover here fills that gap with the
-     frame the player is about to show anyway, so the swap is invisible.
-     Black stays underneath as the fallback while the image itself loads. */
-  background: #000 url('https://b-vz-b2ed02ae-754.tv.pandavideo.com.br/2d1f413c-6c10-4b25-97c8-60c42bbd0ec8/thumbnail.jpg') center / cover no-repeat;
-  position: relative;
-}
+  /* No ratio, no cover, no positioning context. All three were scaffolding for
+     a cross-origin iframe: the box had to be held open at 1:1 before anything
+     was in it, and a cover frame had to be painted because the embed showed
+     flat black for the second or two it spent booting.
 
-/* Fills the ratio box above. Kept in CSS instead of inline attributes so the
-   player cannot be left at Panda's default fixed 720px and overflow the 384px
-   the hero actually gives it.
-
-   Held invisible until the player reports it has media to show. The cover image
-   on the wrapper was being wasted otherwise: the iframe mounts in ~150ms and
-   paints its own empty background over it, long before it has a frame to
-   display, which is the blank/black flash on entering the step. Transparent
-   rather than hidden so the element still takes clicks — a viewer tapping where
-   the play button will be is not swallowed. */
-.pw-vsl-player-wrap iframe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
-  opacity: 0;
-  transition: opacity .25s ease;
-}
-.pw-vsl-player-wrap.is-ready iframe { opacity: 1; }
-
-/* Tap-to-toggle surface over the picture. A click inside a cross-origin iframe
-   cannot be read from this page, so pausing meant hitting the small button in
-   the control bar; this catches the tap on our side and posts `togglePlay` to
-   the player instead.
-
-   `bottom: 56px` is the whole trick: measured on a 384px player, the control bar
-   starts around 342px and the scrubber sits at ~369px, so leaving the last 56px
-   uncovered keeps the scrubber, volume and fullscreen reachable. The bar is a
-   fixed pixel height rather than a proportion, so the same inset holds on the
-   339px player of a smaller phone.
-
-   Transparent and borderless — it must be invisible. A `button` rather than a
-   `div` so it is focusable and announced, which a bare overlay would not be. */
-.pw-vsl-tap {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 56px;
-  z-index: 2;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+     The VTurb element carries its own 1:1 placeholder — `padding: 100% 0 0`
+     over black — and mounts the video into it, so holding the height here as
+     well would stack two ratio boxes and double the block. This is now only a
+     rounded, shadowed frame around whatever the player draws. */
 }
 
 .pw-vsl-loading {

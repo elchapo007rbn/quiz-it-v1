@@ -21,6 +21,10 @@ const nextConfig: NextConfig = {
     "*.ngrok-free.dev",
     "*.ngrok.app",
     "*.ngrok.io",
+    // Cloudflare quick tunnels (`cloudflared tunnel --url`). The hostname is
+    // assigned at random on every start and cannot be reserved, so the wildcard
+    // is the only form that survives a restart.
+    "*.trycloudflare.com",
   ],
 };
 

@@ -1,23 +1,19 @@
 /**
  * Funnel-step events for the affiliate dashboard.
  *
- * The network exposes `app.auralyapp.com/postback?clickid=…&type=…`, which the
- * producer's own funnel never calls — it fires those two steps as Facebook and
- * Bing pixel events instead, so no amount of reading their bundle turns this
- * endpoint up. Verified directly against it with a fresh click id:
+ * The producer's own funnel (quiz.auralyapp.com) fires these through an
+ * `Image().src` pixel at `postback?format=img&type=…&clickid=…` — confirmed by
+ * reading their bundle and by a live test (real click id, format=img → the
+ * dashboard's StartQuiz column incremented after the network's 5-minute sync).
+ * The same endpoint without `format=img` (a fetch, no image) answers 200 with a
+ * JSON body and de-duplicates identically, which is what this file called
+ * before — it looked like a success and never appeared on the dashboard, across
+ * hundreds of real clicks. `format=img` is not a cosmetic difference: it is
+ * evidently the parameter that puts the hit through the network's conversion
+ * pipeline rather than a side ledger.
  *
- *   type=Starquiz  →  {"status":1,"message":"OK"}                        200
- *   type=Endquiz   →  {"status":1,"message":"OK"}                        200
- *   repeat         →  {"status":0,"message":"same clickid: …exists"}     400
- *
- * It de-duplicates per click id, the same way the checkout step does, so a
- * reload or a double tap cannot inflate the count.
- *
- * `no-cors` because the response is not needed and asking for it would only
- * trade a working request for a console error: the endpoint sends no CORS
- * headers, so a readable fetch is rejected before it is ever sent. The reply is
- * opaque here — the verification above was done outside the browser, where that
- * restriction does not apply.
+ * A 1x1 image request de-duplicates per click id server-side, the same way the
+ * checkout step does, so a reload or a double tap cannot inflate the count.
  */
 
 /** Reads one browser cookie; empty string when it is not set. */
@@ -39,7 +35,16 @@ const POSTBACK = 'https://app.auralyapp.com/postback';
  */
 const sent = new Set<string>();
 
-export type FunnelEvent = 'Starquiz' | 'Endquiz';
+/**
+ * Exactly the strings the network's own funnel sends — `StartQuiz` with the
+ * capital Q, not the `Starquiz` this file used to send and not the spelling the
+ * dashboard column uses. Intercepting `Image.src` on quiz.auralyapp.com caught
+ * it firing `type=StartQuiz`, and the mismatch explains the numbers: `Endquiz`
+ * was already spelled the way they spell it and counted 22, while `Starquiz`
+ * sat at 0 across ~200 clicks. The endpoint accepts any string, so a wrong one
+ * fails as a success.
+ */
+export type FunnelEvent = 'StartQuiz' | 'Endquiz';
 
 /**
  * Reports one funnel step, or does nothing.
@@ -57,11 +62,12 @@ export function trackFunnelEvent(type: FunnelEvent): void {
   sent.add(type);
 
   const url =
-    `${POSTBACK}?clickid=${encodeURIComponent(clickId)}&type=${encodeURIComponent(type)}`;
+    `${POSTBACK}?format=img&type=${encodeURIComponent(type)}&clickid=${encodeURIComponent(clickId)}`;
 
   try {
-    // `keepalive` so the request survives the step change that triggered it.
-    void fetch(url, { mode: 'no-cors', keepalive: true }).catch(() => {});
+    // A pixel, not `fetch` — the network's own funnel fires it this way, and
+    // this is the request shape confirmed to reach the dashboard's counters.
+    new Image().src = url;
   } catch {
     // A step that goes unreported costs a row in a dashboard. Nothing here is
     // worth interrupting a funnel run for.

@@ -26,10 +26,10 @@ import Script from 'next/script';
  * (app.auralyapp.com/track.js) calls `/view?clickid=` after writing the cookie
  * and this transcription had dropped it, which is why the affiliate dashboard
  * counted clicks with a bare zero next to them under View Quiz. The `/click`
- * hop that records the checkout step lives in lib/checkout.ts; between them the
- * two calls account for every column of that dashboard this funnel can reach.
- * Starquiz and Endquiz cannot be: the producer fires those as Facebook and Bing
- * pixel events, and there is no pixel on this funnel to fire them into.
+ * hop that records the checkout step lives in lib/checkout.ts, and Starquiz /
+ * Endquiz are fired from lib/tracking.ts as the same kind of image-pixel hit
+ * this tag uses for `/view` — between the four, every column of that dashboard
+ * this funnel can reach is covered.
  *
  * One dependency worth knowing about: the Meta CAPI builder is pulled from
  * unpkg.com at runtime. It loads `async` and every call is wrapped in

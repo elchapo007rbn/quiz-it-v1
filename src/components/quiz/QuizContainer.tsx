@@ -35,14 +35,14 @@ export function QuizContainer() {
   useAssetPrefetch(step);
 
   /**
-   * Starquiz: leaving the landing page, the moment the reader commits.
+   * StartQuiz: leaving the landing page, the moment the reader commits.
    *
    * Driven from `step` rather than from the button so it cannot end up
    * half-wired — every route into step 1 passes through here, the dev navigator
    * included. Endquiz is deliberately not here; see step 14 below.
    */
   useEffect(() => {
-    if (step >= 1) trackFunnelEvent('Starquiz');
+    if (step >= 1) trackFunnelEvent('StartQuiz');
   }, [step]);
 
   const next = useCallback(() => setStep(s => s + 1), []);

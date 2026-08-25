@@ -19,3 +19,16 @@ declare module 'react' {
     }
   }
 }
+
+/**
+ * `window._plt` — the timestamp the Vturb player subtracts from to report its
+ * `player.ttpi` metric. Written by whichever of the vendor's inline snippet,
+ * VturbPreload, or smartplayer.js itself runs first; all three guard with `||`.
+ */
+declare global {
+  interface Window {
+    _plt?: number;
+  }
+}
+
+export {};

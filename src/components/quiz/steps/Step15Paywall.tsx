@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Script from 'next/script';
+import { VTURB_PLAYER_SRC } from '../VturbPreload';
 import { readSession, writeSession, gateRemaining } from '@/lib/session';
 import { readVturbSeconds } from '@/lib/vturbTime';
 import {
@@ -23,18 +25,11 @@ interface Props {
 const REVEAL_AT = 228;
 
 /**
- * The VSL, on VTurb. Both ids come from the embed the account issues: the outer
- * one names the player configuration, the inner one the video itself.
- *
- * VslPreload warms these hosts from step 13, and unlike the iframe it replaces
- * that warming actually lands — the loader and the manifest are fetched by this
- * document, under this document's cache key.
+ * The element the player upgrades. The id encodes the player configuration the
+ * account issues; the loader that reads it is VTURB_PLAYER_SRC, which lives in
+ * VturbPreload beside the warm-up that puts it in cache from step 13.
  */
 const PLAYER_ELEMENT_ID = 'vid-6a8c3ef348dab67a9e65468a';
-const PLAYER_SCRIPT_ID = 'vturb-loader';
-const PLAYER_SCRIPT =
-  'https://scripts.converteai.net/0734bb83-01f8-4b0e-88eb-772e50cba793' +
-  '/players/6a8c3ef348dab67a9e65468a/v4/player.js';
 
 /**
  * ⚠️ DEVELOPMENT-ONLY: opens the gated offer block immediately so it can be
@@ -108,35 +103,6 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
     }, wait * 1000);
 
     return () => clearTimeout(t);
-  }, []);
-
-  /**
-   * Boots the player.
-   *
-   * Its loader is a 12KB script that finds `#vid-…`, mounts a custom element in
-   * this document and starts playback. Injecting it from an effect rather than
-   * rendering a `<script>` tag is what guarantees the element exists first —
-   * the loader reads it synchronously on execution and has nothing to attach to
-   * if it runs earlier.
-   *
-   * Nothing here tracks readiness or forwards taps, which is the point of the
-   * move off the iframe. The player runs in this document with its own controls
-   * and its own placeholder, so the cover image, the `playerReady` gate and the
-   * `postMessage` toggle that stood in for a cross-origin gesture all went with
-   * it. Sound follows the same route: `smartAutoPlay.autoUnmute` starts the
-   * video muted, which is the only autoplay a browser allows, and paints its own
-   * prompt over it for the tap that turns sound on.
-   *
-   * The guard matters on this step specifically — React runs effects twice in
-   * development, and a second loader would mount a second player.
-   */
-  useEffect(() => {
-    if (document.getElementById(PLAYER_SCRIPT_ID)) return;
-    const s = document.createElement('script');
-    s.id = PLAYER_SCRIPT_ID;
-    s.src = PLAYER_SCRIPT;
-    s.async = true;
-    document.head.appendChild(s);
   }, []);
 
   /**
@@ -215,14 +181,19 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
             La Lettura della Tua Anima Gemella<br /><em>È Pronta per Essere Svelata</em>
           </h1>
           <p className="pw-vsl-sub">Guarda il video qui sotto e scopri la tua strada verso l’amore vero</p>
-          {/* The player mounts itself into this element — see the loader effect
-              above. The inner div is the placeholder VTurb ships: it holds the
-              1:1 box open with `padding: 100% 0 0` and paints black underneath,
-              so nothing reflows when the video takes over.
+          {/* Vturb embed, 1:1 — the same ratio the local vsl.mp4 and the Panda
+              iframe before it rendered at, so the block keeps its exact height.
+              Unlike that iframe, the ratio box is the vendor's own placeholder
+              div: it is inside the custom element the player script upgrades,
+              so replacing it with our own would take the element's first child
+              out from under it. .pw-vsl-player-wrap therefore only carries the
+              rounding, the shadow and the cover frame — see globals.css.
 
-              That placeholder is why the wrapper no longer paints a cover image
-              or fades itself in. Both existed to cover the blank an iframe left
-              while it booted, and the player now covers its own.
+              Nothing here mirrors the player's state. The Panda embed needed a
+              `playerReady` flag and a postMessage listener because a
+              cross-origin iframe paints its own empty background over the cover
+              long before it has a frame to show. This player runs in our own
+              document and manages that handoff itself.
 
               REVEAL_AT is unchanged and still enforced by the `setTimeout`
               above, and that timeout is still a page-time timeout — it does not
@@ -235,11 +206,23 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
               id={PLAYER_ELEMENT_ID}
               style={{ display: 'block', margin: '0 auto', width: '100%', maxWidth: 400 }}
             >
+              {/* The vendor's placeholder. It owns the 1:1 box, and that is the
+                  reason it is kept. Its inline `background-color: black` is the
+                  one thing dropped: an inline style outranks the stylesheet, so
+                  black here would hide the cover frame .pw-vsl-player-wrap
+                  paints — the flat-black gap this funnel already went to some
+                  trouble to close. Black survives as the fallback under that
+                  background, so nothing is lost while the image loads. */}
               <div
                 className="vturb-player-placeholder"
-                style={{ position: 'relative', width: '100%', padding: '100% 0 0', zIndex: 0, backgroundColor: 'black' }}
+                style={{ position: 'relative', width: '100%', padding: '100% 0 0', zIndex: 0 }}
               />
             </vturb-smartplayer>
+            {/* The vendor snippet appends this to `<head>` from an inline
+                script. `afterInteractive` is the same timing without the inline
+                block, and it dedupes if the step ever remounts. VturbPreload has
+                already put the file in cache from step 13. */}
+            <Script src={VTURB_PLAYER_SRC} strategy="afterInteractive" />
           </div>
         </div>
       </div>

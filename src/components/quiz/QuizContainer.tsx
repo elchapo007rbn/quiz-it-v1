@@ -22,7 +22,7 @@ import { Step13Revelation } from './steps/Step13Revelation';
 import { Step14Email } from './steps/Step14Email';
 import { Step15Paywall } from './steps/Step15Paywall';
 import { DevStepNav } from './DevStepNav';
-import { VslPreload } from './VslPreload';
+import { VturbPreload } from './VturbPreload';
 
 export function QuizContainer() {
   const [step, setStep] = useState(0);
@@ -279,13 +279,13 @@ export function QuizContainer() {
    *
    * Step 11 is where it starts because that screen holds a reader still for a
    * 34-second audio message — the longest voluntary pause in the funnel, and
-   * the only one long enough to matter. See VslPreload.
+   * the only one long enough to matter. See VturbPreload.
    */
   const PRELOAD_VSL_FROM = 11;
 
   return (
     <>
-      {step >= PRELOAD_VSL_FROM && <VslPreload />}
+      {step >= PRELOAD_VSL_FROM && <VturbPreload />}
       {renderStep()}
       {/* Dev-only page jumper — stripped from production builds. See DevStepNav. */}
       {process.env.NODE_ENV === 'development' && (

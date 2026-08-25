@@ -539,18 +539,28 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
 
 .pw-vsl-player-wrap {
   width: 100%;
+  /* No ratio of its own any more. The 1:1 box is the Vturb placeholder's
+     `padding: 100% 0 0`, which lives inside the custom element the player
+     upgrades — declaring the ratio here too would stack a second one and double
+     the block's height. (Percentage padding rather than `aspect-ratio` is still
+     the right call for the same reason it always was: this funnel is served into
+     TikTok's in-app WebView, where the engine is whatever the app ships, and
+     `aspect-ratio` needs Safari 15+. That choice is now the vendor's.) */
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 8px 30px -10px rgba(27, 20, 70, .18);
-  /* No ratio, no cover, no positioning context. All three were scaffolding for
-     a cross-origin iframe: the box had to be held open at 1:1 before anything
-     was in it, and a cover frame had to be painted because the embed showed
-     flat black for the second or two it spent booting.
+  /* The video's own cover frame, standing in until the player paints over it.
+     The vendor placeholder ships flat black for this gap; the local
+     `<video preload="metadata">` this funnel started with showed a real first
+     frame almost at once, and that is the experience worth keeping. Painting the
+     cover here fills the gap with the frame the player is about to show anyway,
+     so the swap is invisible. Black stays underneath as the fallback while the
+     image itself loads — which is why the placeholder's own inline black is
+     dropped in Step15Paywall rather than overridden.
 
-     The VTurb element carries its own 1:1 placeholder — `padding: 100% 0 0`
-     over black — and mounts the video into it, so holding the height here as
-     well would stack two ratio boxes and double the block. This is now only a
-     rounded, shadowed frame around whatever the player draws. */
+     Hard-coded because a stylesheet cannot import: the same URL is VTURB_COVER
+     in VturbPreload.tsx, which preloads it. Change one, change both. */
+  background: #000 url('https://images.converteai.net/0734bb83-01f8-4b0e-88eb-772e50cba793/players/6a8c3ef348dab67a9e65468a/cover.jpg') center / cover no-repeat;
 }
 
 .pw-vsl-loading {

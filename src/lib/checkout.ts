@@ -167,6 +167,36 @@ export async function resolveCheckoutUrl(data: CheckoutHandoff): Promise<string>
 }
 
 /**
+ * When the last attempt started, or 0 for none. Swallows a second tap made
+ * while the first is still resolving.
+ *
+ * The hop is what registers the checkout step, and the network does not
+ * de-duplicate — a test profile driven once and then poked by hand read 4
+ * StartQuiz and 5 EndQuiz, one row per request. A second hop is therefore a
+ * second Checkout in the report, inflating the one column a buyer's journey is
+ * actually judged on.
+ *
+ * Not hypothetical here: the hop is allowed REDIRECTOR_TIMEOUT_MS, which on
+ * mobile data is long enough for the button to look dead, and an impatient tap
+ * is the obvious response.
+ *
+ * A timestamp rather than a boolean, and this is the important part. A plain
+ * `leaving = true` never resets, because the only intended exit is a navigation
+ * that discards the flag with the document — but if that navigation is ever
+ * blocked or refused, the buy button is dead for the rest of the session. A
+ * silently dead checkout is far worse than an occasional double count, so the
+ * guard expires on its own.
+ *
+ * Not persisted, deliberately: a reader who reaches the checkout, thinks better
+ * of it and comes back to try again is making a real second attempt, and it has
+ * to go through.
+ */
+let lastAttemptAt = 0;
+
+/** Long enough to cover the hop, short enough that a stuck button recovers. */
+const DOUBLE_TAP_WINDOW_MS = REDIRECTOR_TIMEOUT_MS + 1500;
+
+/**
  * Leaves the app for the checkout.
  *
  * `window.location.href`, not the Next router: the destination is another origin,
@@ -174,6 +204,10 @@ export async function resolveCheckoutUrl(data: CheckoutHandoff): Promise<string>
  * checkout's own tracking expects to see.
  */
 export function goToCheckout(data: CheckoutHandoff): void {
+  const now = Date.now();
+  if (now - lastAttemptAt < DOUBLE_TAP_WINDOW_MS) return;
+  lastAttemptAt = now;
+
   void resolveCheckoutUrl(data).then(url => {
     // Cleared here rather than on the checkout's thank-you page, which is on
     // another origin and cannot reach this storage. A reader who comes back

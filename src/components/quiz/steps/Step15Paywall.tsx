@@ -4,6 +4,7 @@ import Script from 'next/script';
 import { VTURB_PLAYER_SRC } from '../VturbPreload';
 import { readSession, writeSession, gateRemaining } from '@/lib/session';
 import { readVturbSeconds } from '@/lib/vturbTime';
+import { trackFunnelEvent } from '@/lib/tracking';
 import {
   FAQ_ITEMS,
   PAYWALL_BENEFITS,
@@ -74,6 +75,21 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
   const displayName = name.trim() || 'Tu';
   // "Both" has no dedicated portrait in the original — it falls back to male.
   const preview = interest === 'female' ? SOULMATE_PREVIEW.female : SOULMATE_PREVIEW.male;
+
+  /**
+   * EndQuiz: the offer was reached, with nothing asked of the reader.
+   *
+   * On mount rather than on the email submit that used to carry it, matching
+   * the producer, whose `handleStepChange` fires it on `C === "paywall"` — the
+   * step type, not an action. That separates "saw the VSL" from "tried to buy",
+   * and the latter is the `/click` hop in lib/checkout.ts.
+   *
+   * A restored session that lands straight on this step fires it too, which is
+   * correct: the offer is on screen either way.
+   */
+  useEffect(() => {
+    trackFunnelEvent('EndQuiz');
+  }, []);
 
   /**
    * Opens the offer after REVEAL_AT seconds — minus whatever the reader already

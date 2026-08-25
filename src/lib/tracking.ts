@@ -29,27 +29,65 @@ export const CLICK_ID_COOKIE = 'rtkclickid-store';
 const POSTBACK = 'https://app.auralyapp.com/postback';
 
 /**
- * Sent at most once per page life. The endpoint already refuses repeats, but a
- * request that exists only to be rejected still costs a visitor on mobile data
- * the round trip.
+ * Guards against sending the same step twice.
+ *
+ * Two layers, because the endpoint does not de-duplicate these: a test profile
+ * driven through the funnel once, then poked four more times by hand, read 4
+ * StartQuiz and 5 EndQuiz on the dashboard. Every repeat is a real row, so one
+ * visitor who reloads inflates the funnel.
+ *
+ * The Set alone was not enough for exactly that reason — it dies with the page,
+ * and a reload is a new page. `sessionStorage` survives reloads and lives as
+ * long as the tab, which is the span a single funnel run occupies. The producer
+ * guards the same way (`sessionStorage.setItem("startQuizFired", "true")`), and
+ * that is presumably why they were never bitten by this.
+ *
+ * The Set stays in front of it as a cheap first check and as the fallback for a
+ * WebView where storage throws.
  */
 const sent = new Set<string>();
 
+const FIRED_KEY = (type: string) => `funnelFired_${type}`;
+
+function alreadySent(type: string): boolean {
+  if (sent.has(type)) return true;
+  try {
+    return sessionStorage.getItem(FIRED_KEY(type)) === 'true';
+  } catch {
+    // Storage disabled or partitioned away. The Set still covers this page.
+    return false;
+  }
+}
+
+function markSent(type: string): void {
+  sent.add(type);
+  try {
+    sessionStorage.setItem(FIRED_KEY(type), 'true');
+  } catch {
+    // Nothing to do: worst case a reload re-reports the step.
+  }
+}
+
 /**
- * One caveat on `Starquiz`, kept here so it is not rediscovered from scratch.
+ * The two strings the producer's own bundle sends, copied from it rather than
+ * from the dashboard.
  *
- * Intercepting `Image.src` on the producer's own funnel caught it sending
- * `type=StartQuiz` — capital Q, a spelling this file has never used. Over the
- * same period the dashboard read 0 Starquiz against ~200 clicks while `Endquiz`,
- * which matches their spelling exactly, counted 22. The endpoint accepts any
- * string and answers 200, so a wrong `type` fails as a success and shows up
- * nowhere.
+ * This distinction cost a thousand clicks, so it is written down. The dashboard
+ * labels its column **Starquiz**, and that label is not the event name: the
+ * source sends `StartQuiz`. Those are not the same word case-folded —
+ * `starquiz` is missing the **t** of `start`. Meanwhile `Endquiz`, which this
+ * file sent for months, folds to exactly `endquiz` and matched all along.
  *
- * The spelling below is `Starquiz` by explicit decision, not by oversight. If
- * the column stays at zero after `format=img` has had a full sync to land, this
- * one word is the next thing to change.
+ * That asymmetry is the whole mystery: over 1,047 clicks the dashboard read 0
+ * Starquiz and 53 Endquiz off the same function, endpoint and cookie. The
+ * endpoint accepts any string and answers 200, so an unrecognised `type` fails
+ * as a success and lands nowhere.
+ *
+ * `Checkout` is deliberately absent. The producer has no such postback — its
+ * column is filled by the `/click` redirector hop in lib/checkout.ts, which is
+ * already wired and already counting.
  */
-export type FunnelEvent = 'Starquiz' | 'Endquiz';
+export type FunnelEvent = 'StartQuiz' | 'EndQuiz';
 
 /**
  * Reports one funnel step, or does nothing.
@@ -59,12 +97,12 @@ export type FunnelEvent = 'Starquiz' | 'Endquiz';
  * anyway is not an option: the event would have nothing to attach to.
  */
 export function trackFunnelEvent(type: FunnelEvent): void {
-  if (sent.has(type)) return;
+  if (alreadySent(type)) return;
 
   const clickId = readCookie(CLICK_ID_COOKIE);
   if (!clickId) return;
 
-  sent.add(type);
+  markSent(type);
 
   const url =
     `${POSTBACK}?format=img&type=${encodeURIComponent(type)}&clickid=${encodeURIComponent(clickId)}`;

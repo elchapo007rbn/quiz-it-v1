@@ -87,20 +87,24 @@ export function QuizContainer() {
   }, [step, answers, patterns, desires, importance]);
 
   /**
-   * Starquiz: leaving the landing page, the moment the reader commits.
+   * StartQuiz: the reader left the landing page and the gender screen is up.
+   *
+   * This is the step the dashboard means by "clicaram para iniciar o quiz", and
+   * the producer fires it at the same place — their `handleStepChange` reads
+   * `s === 0 && i === 1`, the landing-to-gender transition, not an answer. An
+   * earlier pass moved it onto the gender answer instead; that measured a
+   * harder step than theirs and would have made the two funnels' rates
+   * incomparable, which is the trap this file already fell into once with
+   * EndQuiz.
    *
    * Driven from `step` rather than from the button so it cannot end up
-   * half-wired — every route into step 1 passes through here, the dev navigator
-   * included. A restored session satisfies `step >= 1` too, so someone who
-   * resumes mid-quiz is still counted.
-   *
-   * Endquiz is deliberately not here. The branch this was merged from moved it
-   * to `step >= 11`; that was reverted on purpose, because Endquiz is meant to
-   * mean "lead captured with a valid email", which only step 14 can know. See
-   * the call site there.
+   * half-wired: every route into the gender screen passes through here, the dev
+   * navigator and a restored session included. Firing on a restore is correct —
+   * that reader did start the quiz — and the sessionStorage guard in
+   * `trackFunnelEvent` keeps a reload from reporting it twice.
    */
   useEffect(() => {
-    if (step >= 1) trackFunnelEvent('Starquiz');
+    if (step >= 1) trackFunnelEvent('StartQuiz');
   }, [step]);
 
   const next = useCallback(() => setStep(s => s + 1), []);
@@ -233,15 +237,13 @@ export function QuizContainer() {
         return (
           <Step14Email
             name={answers.name}
+            // Endquiz used to report here, on a validated email. It moved to
+            // the paywall's own mount so the dashboard column means "saw the
+            // offer" rather than "left an address" — see Step15Paywall.
             onSubmit={e => {
               const final = { ...answers, email: e, patterns, desires, importance };
               setAnswers(final);
               saveResults(final);
-              // Endquiz reports here rather than on a step change, because this
-              // callback only runs once the address has passed the step's own
-              // validation. Reaching the screen means nothing; leaving it with
-              // an email is the signal the dashboard is asking about.
-              trackFunnelEvent('Endquiz');
               next();
             }}
             progressPct={pct(14)}

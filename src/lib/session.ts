@@ -87,7 +87,10 @@ function isSession(v: unknown): v is QuizSession {
     Array.isArray(s.patterns) &&
     Array.isArray(s.desires) &&
     Array.isArray(s.importance) &&
-    typeof s.videoWatched === 'number' &&
+    // NaN/Infinity would pass `typeof === 'number'` but break `gateRemaining`:
+    // `setTimeout(fn, NaN)` fires immediately, bypassing the gate. Matches the
+    // guard `readVturbSeconds` already applies on the write side.
+    Number.isFinite(s.videoWatched) &&
     typeof s.ctaUnlocked === 'boolean'
   );
 }

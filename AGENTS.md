@@ -25,7 +25,8 @@ A reusable template for reverse-engineering any website into a clean, modern Nex
 - `npm run build` — Production build
 - `npm run lint` — ESLint check
 - `npm run typecheck` — TypeScript check
-- `npm run check` — Run lint + typecheck + build
+- `npm run test` — Vitest unit tests
+- `npm run check` — Run lint + typecheck + test + build
 
 To add a shadcn/ui component, run the CLI without installing it:
 `npx shadcn@latest add <component>` — it reads `components.json`. The package is

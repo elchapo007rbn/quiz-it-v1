@@ -224,9 +224,12 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
               or fades itself in. Both existed to cover the blank an iframe left
               while it booted, and the player now covers its own.
 
-              REVEAL_AT is untouched by any of this. It counts time on the page,
-              not video progress — which is deliberate, since progress can be
-              scrubbed and the offer would unlock early. */}
+              REVEAL_AT is unchanged and still enforced by the `setTimeout`
+              above, and that timeout is still a page-time timeout — it does not
+              watch the player. What changed is its duration: the wait is now
+              REVEAL_AT minus whatever watch time was credited from a previous
+              visit, so a returning reader is never made to sit out the gate
+              again. */}
           <div className="pw-vsl-player-wrap">
             <vturb-smartplayer
               id={PLAYER_ELEMENT_ID}

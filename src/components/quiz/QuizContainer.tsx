@@ -54,7 +54,12 @@ export function QuizContainer() {
     if (!saved) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync restore is intentional: post-paint by design, the one-frame cost is the accepted trade documented above.
     setStep(saved.step);
-    setAnswers(saved.answers);
+    // Spread over a default rather than trusting the blob's shape: `name` is a
+    // required prop downstream, and a hand-edited or future-schema payload that
+    // omits it would throw on `name.trim()` in step 15. Widened to `Partial`
+    // here because that is what `isSession` actually guarantees at runtime —
+    // TS only believes `name` is always present.
+    setAnswers({ name: '', ...(saved.answers as Partial<QuizAnswers>) });
     setPatterns(saved.patterns);
     setDesires(saved.desires);
     setImportance(saved.importance);

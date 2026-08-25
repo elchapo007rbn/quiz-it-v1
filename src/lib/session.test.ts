@@ -111,6 +111,11 @@ describe('readSession', () => {
     expect(readSession(BASE.timestamp + 1000)).toBeNull();
   });
 
+  it('returns null when the watch time is not a finite number', () => {
+    stubStorage({ [SESSION_KEY]: JSON.stringify({ ...BASE, videoWatched: NaN }) });
+    expect(readSession(BASE.timestamp + 1000)).toBeNull();
+  });
+
   it('returns null rather than throwing when localStorage is unavailable', () => {
     vi.stubGlobal('localStorage', undefined);
     expect(() => readSession(2_000_000)).not.toThrow();

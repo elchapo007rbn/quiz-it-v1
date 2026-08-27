@@ -246,7 +246,6 @@ export function QuizContainer() {
               saveResults(final);
               next();
             }}
-            progressPct={pct(14)}
           />
         );
 

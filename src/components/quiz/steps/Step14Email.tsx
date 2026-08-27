@@ -5,7 +5,6 @@ import { classifyEmail, ghostCompletion } from '@/lib/email';
 interface Props {
   name: string;
   onSubmit: (email: string) => void;
-  progressPct: number;
 }
 
 /**
@@ -25,7 +24,7 @@ function withoutScrolling(mutate: () => void) {
   if (window.scrollX !== x || window.scrollY !== y) window.scrollTo(x, y);
 }
 
-export function Step14Email({ name, onSubmit, progressPct }: Props) {
+export function Step14Email({ name, onSubmit }: Props) {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [suggestion, setSuggestion] = useState('');
@@ -154,21 +153,27 @@ export function Step14Email({ name, onSubmit, progressPct }: Props) {
 
   return (
     <div className="evD">
-      <div className="evD-prog"><i style={{ width: `${progressPct}%` }} /></div>
-
+      {/* The orb sits on the column's left edge and the kicker centres in the
+          row on its own, so the row reads as one band instead of a stack. The
+          progress bar that used to open the step is gone: on Android inside
+          TikTok the keyboard draws over the lower half of the sheet without
+          telling the page, and every pixel above it had to go to the field and
+          the button. See `docs/research/VIEWPORT-TELEMETRY.md`. */}
       <div className="evD-teaser">
-        <div className="evD-orbwrap">
-          <div className="evD-ring" />
-          <div className="evD-orb" />
-          <span className="evD-orblock">🔒</span>
+        <div className="evD-trow">
+          <div className="evD-orbwrap">
+            <div className="evD-ring" />
+            <div className="evD-orb" />
+            <span className="evD-orblock">🔒</span>
+          </div>
+          <span className="evD-tkicker"><i />Il suo volto è pronto</span>
         </div>
-        <span className="evD-tkicker"><i />Il suo volto è pronto</span>
         <p className="evD-tline">Si chiama <b>Mxxxxx</b></p>
       </div>
 
       <h1 className="evD-h1">
         {name ? (
-          <>{name}, dove vuoi che<br />inviamo la tua lettura?</>
+          <>{name}, dove vuoi che inviamo la tua lettura?</>
         ) : (
           <>Dove vuoi che<br />inviamo la tua lettura?</>
         )}
@@ -209,6 +214,24 @@ export function Step14Email({ name, onSubmit, progressPct }: Props) {
             // Letting the tap open it makes the sequence identical everywhere.
             required
           />
+          {/* The tap target for the suggestion. The selection is what says
+              "this is provisional"; this says which key does it, and gives a
+              thumb somewhere to land for the reader who will never find the
+              key. `preventDefault` on the press keeps the field focused —
+              `onBlur` clears the ghost, so a real blur would cancel the very
+              thing this button accepts. */}
+          {ghosting && (
+            <button
+              type="button"
+              className="evD-accept"
+              aria-label="Completa l’indirizzo"
+              onPointerDown={e => e.preventDefault()}
+              onClick={acceptGhost}
+            >
+              ↵
+            </button>
+          )}
+
           {/* The suggestion is real selected text, so a screen reader would read
               it as typed. Announce it as a suggestion instead. */}
           <span id="evD-ghost-hint" className="evD-sr" aria-live="polite">
@@ -225,7 +248,19 @@ export function Step14Email({ name, onSubmit, progressPct }: Props) {
 
         <button type="submit" className="evD-cta">Continua</button>
 
-        <p className="evD-fine">🔒 Privato e sicuro. Puoi disiscriverti quando vuoi.</p>
+        {/* Drawn rather than the 🔒 emoji. The emoji is redrawn by every OS and
+            OEM font — gold and cartoonish on some Androids — and a reassurance
+            about handling someone's address is the one line on this step that
+            cannot afford to look informal. This is the browser's own padlock,
+            the shape a European reader has been taught to trust in the address
+            bar, inheriting the paragraph's colour and scaling with its type. */}
+        <p className="evD-fine">
+          <svg className="evD-fineicon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <rect x="3" y="7" width="10" height="7" rx="1.7" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M5.6 7V5.1a2.4 2.4 0 0 1 4.8 0V7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          Privato e sicuro. Puoi disiscriverti quando vuoi.
+        </p>
       </form>
     </div>
   );

@@ -41,6 +41,22 @@ you are looking at a production build (`next start`), which strips them as dead 
 Reviewing the funnel page by page starts by running modo dev, and the arrows are what
 let you jump straight to the step under discussion.
 
+## The funnel has 14 screens and 16 step numbers
+
+Step 14, the email capture, is **archived**: step 13 routes straight to the
+paywall at 15 and nothing renders 14 any more. It is still in `QuizContainer`'s
+switch and still reachable through modo dev's arrows, so it can come back
+without being rebuilt.
+
+The gap in the numbering is deliberate. `readSession` accepts a stored step only
+while it is below `TOTAL_STEPS`, so renumbering 15 down to 14 would reject every
+saved session parked on the paywall and send those readers back to step 0 on the
+next deploy. **Do not close the gap**, and do not "fix" `TOTAL_STEPS = 16`.
+
+Tracking is unaffected and needs no remapping: `StartQuiz` fires from
+`QuizContainer` at `step >= 1`, `EndQuiz` from the paywall's own mount. Neither
+ever depended on the email screen.
+
 ## Code Style
 - TypeScript strict mode, no `any`
 - Named exports, PascalCase components, camelCase utils

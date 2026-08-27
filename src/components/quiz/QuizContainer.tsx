@@ -108,6 +108,22 @@ export function QuizContainer() {
   }, [step]);
 
   const next = useCallback(() => setStep(s => s + 1), []);
+
+  /**
+   * Step 13 hands off straight to the paywall, skipping the email capture.
+   *
+   * The funnels this one was modelled on dropped that screen and fill only the
+   * name at checkout; the owner mapped them and chose the same. Step 14 is kept
+   * in the switch rather than deleted — archived, still reachable through the
+   * dev navigator, and ready to come back without being rebuilt.
+   *
+   * The numbering is deliberately left with a hole in it. `readSession` accepts
+   * a stored step only while it is below `TOTAL_STEPS`, so renumbering 15 down
+   * to 14 would reject every session currently parked on the paywall and send
+   * those readers back to step 0 the moment this deploys. Keeping the numbers
+   * costs one comment; changing them costs the readers closest to buying.
+   */
+  const skipToPaywall = useCallback(() => setStep(15), []);
   const back = useCallback(() => setStep(s => Math.max(0, s - 1)), []);
   /** The original's bar is hand-tuned per step, not step/total — see PROGRESS_TARGETS. */
   const pct = (step: number) => PROGRESS_TARGETS[step] ?? 0;
@@ -228,11 +244,14 @@ export function QuizContainer() {
           <Step13Revelation
             name={answers.name}
             zodiac={answers.zodiac || 'Ariete'}
-            onContinue={next}
+            onContinue={skipToPaywall}
             progressPct={pct(13)}
           />
         );
 
+      /* Archived, not deleted — nothing routes here any more. Step 13 jumps to
+         15; see `skipToPaywall`. The dev navigator can still reach it, which is
+         the point of leaving it wired. */
       case 14:
         return (
           <Step14Email

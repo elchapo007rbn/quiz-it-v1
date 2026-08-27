@@ -116,18 +116,23 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  height: 24px;
+  /* 28px, because two lines of 11px at this leading measure 25.3 and would
+     otherwise spill out of the 24px the 9px type needed. */
+  height: 28px;
   padding: 0 8px 0 11px;
-  border-right: 1px solid #8BA0BF;
-  font-size: 9px;
-  font-weight: 700;
+  border-right: 1px solid #94A3B8;
+  font-size: 11px;
+  font-weight: 800;
   line-height: 1.15;
   letter-spacing: .03em;
   text-align: right;
   text-transform: uppercase;
-  /* The CTA's own gradient end, so the one piece of copy in this strip belongs
-     to the funnel rather than to the mastheads scrolling past it. */
-  color: #7C3AED;
+  /* #94A3B8 is the fill the mastheads themselves are drawn in, so the label
+     and the logos read as one row rather than as a purple caption in front of
+     someone else's logos. Full opacity where the logos sit at .6: identical
+     values would leave 11px type fainter than a wordmark ten times its size,
+     which is legibility rather than colour. */
+  color: #94A3B8;
 }
 
 /* A mask rather than the two gradient overlays this used to carry. The
@@ -648,7 +653,12 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
   --bk2: #4B4866;
   --bk3: #7A7695;
   --ln: #ECE9F5;
-  --bg: #FAF9FD;
+  /* #FAF5FF, matching .pw-vsl-hero. They were #FAF9FD and #FAF5FF - two
+     lilacs two points apart, meeting in a straight horizontal line just below
+     the CTA where the hero block ends. Small enough to be invisible as colour
+     and large enough to read as a seam across the whole width. One tone now,
+     from the top of the page through the button. */
+  --bg: #FAF5FF;
   --w: #FFF;
   --acc: #EFEAFF;
   --rad: 16px;
@@ -681,8 +691,12 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
 
 /* VSL HERO */
 .pw-vsl-hero {
-  background: #fff;
-  padding: 28px 18px 32px;
+  background: #FAF5FF;
+  /* 12px of top and 8px of bottom, against the 28 and 32 this carried. The
+     button under the video has to land inside the fold: measured at 360x622 it
+     ended 50px past it, and the whole 50px was empty space above and below the
+     player. */
+  padding: 12px 18px 8px;
   position: relative;
   overflow: hidden;
   max-width: 420px;
@@ -824,6 +838,332 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
   margin: 0 0 22px;
   text-align: center;
   font-weight: 500;
+}
+
+/* "Pronto nel tuo account" - ported from the /dev/paywall-v2 draft, rewritten
+   in this stylesheet's own tokens so it belongs to the paywall rather than
+   carrying a second palette in behind it. The one literal kept is the heading's
+   violet-to-rose gradient, which is what makes the block read as the draft the
+   design was approved from. */
+/* No card at all any more: no fill, no border, no shadow, and no horizontal
+   padding, so its contents start on the same vertical line as the CTA and the
+   video above them. A white box on #FAF5FF was a second surface for content
+   that belongs to the page itself. */
+.pw-acct {
+  background: transparent;
+  border: 0;
+  padding: 4px 0 0;
+  margin: 0 0 12px;
+}
+
+.pw-acct-h2 {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -.02em;
+  color: var(--bk);
+  text-align: center;
+  margin: 0 0 2px;
+}
+
+/* The promise, one line under the title and coloured rather than folded into
+   it. 2px above and 14px below is what makes the pair read as heading and
+   subheading instead of as two sentences of equal weight. */
+.pw-acct-sub {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -.01em;
+  text-align: center;
+  margin: 0 0 14px;
+  background: linear-gradient(92deg, #7C3AED, #E0729E);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* The gradient is the only thing colouring this line, so without background-clip
+   it would paint transparent and the subheading would simply be missing. */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .pw-acct-sub { background: none; color: var(--p); }
+}
+
+/* The frame: 1.42:1 and the full width of the video and CTA above it, so the
+   three stack as one column. */
+.pw-acct-draw {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.42 / 1;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #FBFAF7;
+  /* A hairline and a contact shadow, not the violet glow this carried before.
+     #FBFAF7 against the page's #FAF5FF is 251,250,247 on 250,245,255 - the same
+     luminance to within a couple of points - so with nothing on the edge the
+     card had no edge. The 1px line is what says "this is an object"; the 2px
+     shadow at 4% only stops it from looking pasted flat onto the page. The
+     glow said "look at me", which is the CTA's job, not this card's. */
+  border: 1px solid var(--ln);
+  box-shadow: 0 1px 2px rgba(27, 20, 70, .04);
+}
+
+/* The left 54%. `object-position: 50% 30%` puts the face in the visible band
+   rather than the chest, and the 1.14 overscan covers the edge an 8px blur
+   would otherwise bleed inwards. */
+.pw-acct-draw-photo {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 54%;
+  overflow: hidden;
+}
+
+.pw-acct-draw-photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 30%;
+  filter: blur(8px) saturate(1.05) brightness(1.02);
+  transform: scale(1.14);
+}
+
+/* The right panel overlaps the photo and is masked to nothing at its own left
+   edge, so the two do not meet along a seam - the copy simply emerges out of
+   the portrait. Blur and mask live on different elements because a filter
+   creates its own containing block and would clip the mask against it. */
+.pw-acct-draw-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 60%;
+  overflow: hidden;
+  background: linear-gradient(160deg, #FBF3FF 0%, #FFF 55%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, .55) 18%, #000 38%);
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, .55) 18%, #000 38%);
+}
+
+.pw-acct-draw-copy {
+  position: absolute;
+  inset: 0;
+  padding: 14px 14px 14px 24%;
+  filter: blur(4px);
+  text-align: left;
+  color: #475569;
+}
+
+.pw-acct-draw-copy h3 {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.14;
+  letter-spacing: -.015em;
+  margin: 0 0 10px;
+  background: linear-gradient(120deg, #066FDE, #7C24D5);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.pw-acct-draw-copy p {
+  font-size: 9px;
+  line-height: 1.55;
+  margin: 0 0 8px;
+}
+
+/* A violet vignette that darkens the corners into the frame. `multiply` so it
+   deepens what is already there instead of laying a flat film over it. */
+.pw-acct-draw-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(120% 92% at 30% 28%, transparent 46%, rgba(124, 36, 213, .18) 100%);
+  mix-blend-mode: multiply;
+}
+
+/* Centred on the frame, on the same axis as the caption under it. The
+   translate has to live inside the keyframes too, because `transform` is one
+   property and the pulse would otherwise drop the centring on its first
+   frame. */
+.pw-acct-lock {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6D28D9, #B4489C);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 8px 22px rgba(109, 40, 217, .5), 0 0 0 6px rgba(255, 255, 255, .72);
+  animation: pwAcctLock 2.4s ease-in-out infinite;
+}
+
+@keyframes pwAcctLock {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pw-acct-lock { animation: none; }
+}
+
+/* Inside the frame, centred on the same axis as the padlock above it.
+
+   The scrim rises rather than falls, and it is light. A caption over an image
+   almost always sits on a dark gradient, but that convention exists to carry
+   white text - under black ink it would be shading dark type towards a dark
+   ground and taking contrast away instead of adding it. The ink decided the
+   direction.
+
+   #FBFAF7 is the frame's own base colour, so the fade resolves into the card
+   rather than into a white band that stops. Three stops, not two: a plain
+   two-stop ramp on a blurred photograph shows its own top edge, and the extra
+   midpoint at 42% is what keeps the boundary from being findable. 34px of top
+   padding gives the fade room to be long - a short one reads as a strip laid
+   over the picture, a long one as light falling off it. */
+.pw-acct-cap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 34px 14px 11px;
+  background: linear-gradient(
+    to top,
+    #FBFAF7 0%,
+    rgba(251, 250, 247, .88) 42%,
+    rgba(251, 250, 247, 0) 100%
+  );
+  color: var(--bk);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.pw-acct-cap-ico {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  color: currentColor;
+}
+
+/* The press strip is step 0's, reused here. `.pw-wrap *` zeroes every margin
+   and padding inside this step, at the same specificity as the strip's own
+   rules and later in the file, so the three that matter have to be said again.
+
+   The track's `padding-left` is not cosmetic: it has to stay equal to the 14px
+   gap. The track holds the list twice - ten logos, nine gaps and that one
+   padding - so half its width is exactly the distance from the first logo of
+   one copy to the first of the next, which is what makes `translate3d(-50%)`
+   close the loop. Lose it and the strip jumps once per lap. */
+.pw-wrap .s00-marquee { margin: 18px auto 0; }
+.pw-wrap .s00-marquee-label { padding: 0 8px 0 11px; }
+.pw-wrap .s00-marquee-track { padding-left: 14px; }
+
+/* Two rows of social proof under the frame. Left-aligned, unlike the heading
+   above them, because a two-line claim beside a fixed icon column only reads as
+   a list when its text starts on the same vertical line. */
+.pw-acct-proof {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0 0;
+  text-align: left;
+}
+
+.pw-acct-proof li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* The reference tile is slate with a dark glyph; this one is the funnel's own
+   violet with a white one, so the pair belongs to this page rather than to the
+   site they came from. `flex: 0 0 auto` with an explicit size is load-bearing:
+   an inline SVG with no intrinsic width fills whatever box it is given. */
+.pw-acct-proof-ico {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--p2);
+  color: #fff;
+}
+
+.pw-acct-proof-ico svg { width: 22px; height: 22px; }
+
+.pw-acct-proof li > span:last-child {
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--bk2);
+}
+
+.pw-acct-proof b { font-weight: 800; color: var(--bk); }
+
+
+/* ⚠️ DEVELOPMENT-ONLY, and drawn so it can never be mistaken for the real
+   thing: a flat lilac square with a dashed edge where a 1:1 video should be.
+   The rule can stay in the stylesheet safely - nothing in a production build
+   carries this class, because the branch that renders it is compiled away. */
+.pw-vsl-stub {
+  aspect-ratio: 1;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  border: 2px dashed #C4B5FD;
+  border-radius: 14px;
+  background: #EDE9FE;
+  color: #5B21B6;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.pw-vsl-stub small {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-transform: none;
+  opacity: .7;
+}
+
+/* The player's geometry declared in the stylesheet, not only in the inline
+   style the JSX passes. The vendor script rewrites that attribute wholesale to
+   inject its own custom properties, and a React re-render landing between the
+   two leaves the custom element with no `display` - unknown elements default to
+   inline, the placeholder's `padding: 100%` then resolves against an inline box,
+   and the whole video collapses to zero height with the CTA sliding up into it.
+   Observed in dev after a hot reload. The inline style stays; this makes losing
+   it harmless. */
+.pw-vsl-player-wrap vturb-smartplayer {
+  display: block;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 400px;
 }
 
 .pw-vsl-player-wrap {
@@ -1076,10 +1416,19 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
   background: linear-gradient(135deg, var(--p), var(--p2));
   color: #fff;
   border: 0;
-  border-radius: 999px;
-  padding: 17px 20px;
+  /* 16px, not the 999px pill this was. A pill that wide reads as a chip rather
+     than a button, and next to the 18px cards around it the two roundings were
+     arguing. */
+  border-radius: 16px;
+  /* 19px against 16, and `line-height: 1` with it. At 16px the label was a
+     small mark floating in a 56px bar. The unitless normal line-height was
+     adding the font's own leading above and below the glyphs on top of the
+     flex centring, which is what made the text sit high rather than dead
+     centre. */
+  padding: 18px 20px;
   font-weight: 900;
-  font-size: 16px;
+  font-size: 19px;
+  line-height: 1;
   cursor: pointer;
   box-shadow: 0 18px 36px -14px rgba(106, 76, 255, .5);
   margin: 16px 0;
@@ -1092,16 +1441,32 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
   transform: scale(.98);
 }
 
+/* The shadow alone was too quiet to read as a pulse - on a phone in daylight
+   it is invisible. The scale is the same 1.03 the landing CTA and step 13's
+   button already use, so the three buttons in this funnel now breathe at the
+   same amplitude. */
 @keyframes pwCtaPulse {
 
   0%,
   100% {
+    transform: scale(1);
     box-shadow: 0 18px 36px -14px rgba(106, 76, 255, .5);
   }
 
+  /* 1.015, not the 1.03 the other buttons in the funnel use. This one sits
+     directly under the player and shares its width, so a 3% swell pushed it
+     ~5px past the video's edges on each side and broke the column. Half the
+     amplitude still reads as breathing and stays inside the line. */
   50% {
+    transform: scale(1.015);
     box-shadow: 0 22px 46px -12px rgba(106, 76, 255, .78);
   }
+}
+
+/* A button breathing on a loop for as long as the offer is on screen is the
+   slow oscillation reduced motion exists to stop. The shadow stays. */
+@media (prefers-reduced-motion: reduce) {
+  .pw-cta { animation: none; }
 }
 
 .pw-safe {

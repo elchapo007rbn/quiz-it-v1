@@ -5,6 +5,7 @@ import { VTURB_PLAYER_SRC } from '../VturbPreload';
 import { readSession, writeSession, gateRemaining } from '@/lib/session';
 import { readVturbSeconds } from '@/lib/vturbTime';
 import { RevealTimer } from './RevealTimer';
+import { PressMarquee } from '@/components/quiz/PressMarquee';
 import { trackFunnelEvent } from '@/lib/tracking';
 import {
   FAQ_ITEMS,
@@ -42,6 +43,28 @@ const PLAYER_ELEMENT_ID = 'vid-6a8c3ef348dab67a9e65468a';
  */
 const SKIP_GATE_IN_DEV = process.env.NODE_ENV === 'development';
 
+/**
+ * ⚠️ DEVELOPMENT-ONLY: draws a flat box where the VSL goes instead of loading
+ * the Vturb player.
+ *
+ * Reviewing this step meant loading the player on every reload, which spends a
+ * view on the vendor's account for nothing and leaves watch progress behind
+ * that makes the next reload open on its "continue or restart?" dialog instead
+ * of the page. It also owns its own inline style, which a React re-render can
+ * stomp - the collapsed-video bug this box exists to stop happening again.
+ *
+ * `process.env.NODE_ENV` is inlined by the bundler, so in `next build` this is
+ * the literal `false` and the whole placeholder branch is dropped from the
+ * output. There is no flag, no env var and no query parameter that can turn the
+ * VSL off in production - the only build that can render this box is one
+ * started by `next dev`.
+ *
+ * Clicking the box loads the real player, for when the player itself is what
+ * you came to look at. Delete this constant, its use below and `.pw-vsl-stub`
+ * to restore the shipping default - same rule as the dev-nav cleanup note.
+ */
+const VSL_STUB_IN_DEV = process.env.NODE_ENV === 'development';
+
 const CTA_LABEL = '✨ SBLOCCA LA MIA RIVELAZIONE COMPLETA! →';
 
 const COMPAT_BARS = [
@@ -55,10 +78,18 @@ const mmss = (total: number) =>
   `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 
 /** Declared at module scope so React keeps one identity across renders. */
-function Cta({ onClick, style }: { onClick: () => void; style?: React.CSSProperties }) {
+function Cta({
+  onClick,
+  style,
+  label = CTA_LABEL,
+}: {
+  onClick: () => void;
+  style?: React.CSSProperties;
+  label?: string;
+}) {
   return (
     <button className="pw-cta" onClick={onClick} type="button" style={style}>
-      {CTA_LABEL}
+      {label}
     </button>
   );
 }
@@ -69,6 +100,8 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
   const [viewers, setViewers] = useState(127);
   const [slide, setSlide] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  /** Dev only: the stub was clicked, so mount the real player after all. */
+  const [stubDismissed, setStubDismissed] = useState(false);
 
   // Index-based fallback: a name lookup would break the moment the signs are
   // relabelled, and the `!` would turn that into a runtime crash.
@@ -184,10 +217,6 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
     return () => clearInterval(t);
   }, [revealed]);
 
-  const scrollToUnlock = () => {
-    document.getElementById('pwUnlock')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   return (
     <div className="pw-wrap">
       {/* ── VSL HERO ─────────────────────────────────────────── */}
@@ -219,6 +248,17 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
               visit, so a returning reader is never made to sit out the gate
               again. */}
           <div className="pw-vsl-player-wrap">
+            {VSL_STUB_IN_DEV && !stubDismissed ? (
+              <button
+                type="button"
+                className="pw-vsl-stub"
+                onClick={() => setStubDismissed(true)}
+              >
+                blocco VSL — solo in dev
+                <small>tocca per caricare il player</small>
+              </button>
+            ) : (
+              <>
             <vturb-smartplayer
               id={PLAYER_ELEMENT_ID}
               style={{ display: 'block', margin: '0 auto', width: '100%', maxWidth: 400 }}
@@ -240,67 +280,112 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
                 block, and it dedupes if the step ever remounts. VturbPreload has
                 already put the file in cache from step 13. */}
             <Script src={VTURB_PLAYER_SRC} strategy="afterInteractive" />
+              </>
+            )}
           </div>
         </div>
       </div>
 
       {/* ── GATED ────────────────────────────────────────────── */}
       <div className={`pw-gated${revealed ? ' pw-visible' : ''}`}>
-        {/* HERO */}
-        <div className="pw-hero">
-          <div className="pw-ct">
-            <h1 className="pw-hero-title">La Rivelazione della Tua Anima Gemella <em>È Pronta!</em></h1>
-            <p className="pw-hero-sub">
-              <b>ECCO L’ANTEPRIMA DELLA TUA ANIMA GEMELLA</b> — canalizzata dagli allineamenti
-              planetari della tua carta natale <span>{sign.name}</span>. Un primo sguardo alla
-              persona che le stelle hanno scritto nel tuo destino.
-            </p>
-            <ul className="pw-hb">
-              <li><span className="pw-chk">✓</span> Iniziali dell’anima gemella: <span className="pw-mask">••••••</span></li>
-              <li><span className="pw-chk">✓</span> Data dell’incontro: <span className="pw-mask">••/••/2026</span></li>
-              <li><span className="pw-chk">✓</span> Tipo di legame: <span>Profondo e magnetico</span></li>
-              <li><span className="pw-chk">✓</span> Tratto speciale: <span>Una bellezza ammirevole</span></li>
-            </ul>
-            <button className="pw-cta" onClick={scrollToUnlock} type="button">{CTA_LABEL}</button>
-            <div className="pw-safe"><span>🛡️ Consegna immediata</span><span>🔒 Pagamento sicuro</span></div>
-          </div>
+        {/* The first thing under the video is the buy button, which is where
+            the V2 layout puts it. What stood here was a second hero - its own
+            H1, a four-line teaser and a CTA that only scrolled to the price
+            block further down. The reader had already watched 3:48 to get
+            here; asking her to read another headline and then scroll to find
+            the offer is two steps between her and the checkout.
+
+            Inside `.pw-gated`, so it appears when the gate opens and not
+            before. REVEAL_AT is untouched.
+
+            `onCheckout` is goToCheckout, whose redirector hop is what fills
+            the Checkout column in the dashboard - already wired, already
+            counting, and it ignores a second tap. */}
+        <div className="pw-ct">
+          <Cta onClick={onCheckout} label="Ottieni lo schizzo" />
         </div>
 
-        {/* SKETCH */}
+        {/* Ported from the /dev/paywall-v2 draft. The portrait follows the same
+            rule the sketch further down already follows - the reader's answer
+            on step 2 picks the face - so `preview` is reused rather than
+            recomputed, and the two blocks can never disagree about who she is
+            waiting for. */}
         <div className="pw-ct">
-          <div className="pw-sketch">
-            <div className="pw-sketch-frame">
-              <div className="pw-media-placeholder">
+          <div className="pw-acct">
+            <h2 className="pw-acct-h2">Il tuo schizzo è pronto!</h2>
+            <p className="pw-acct-sub">Vedi la tua anima gemella oggi!</p>
+            {/* The 1.42:1 card from the reference: the portrait holds the
+                left 54%, a masked panel of blurred copy dissolves into it from
+                the right, and the caption is a bar inside the frame rather
+                than a line under it. The whole thing is the width of the video
+                and the CTA above it. */}
+            <div className="pw-acct-draw">
+              <div className="pw-acct-draw-photo">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={preview} className="pw-soulmate-img" alt="Anteprima dell’anima gemella" />
+                <img src={preview} alt="Il disegno della tua anima gemella" />
               </div>
-              {/* The female portrait ships with a lock baked in; only overlay one otherwise. */}
-              {interest !== 'female' && <div className="pw-sketch-lock">🔒</div>}
-            </div>
-            <div className="pw-trait-row">
-              <div className="pw-trait">
-                <p className="pw-label">Carta natale</p>
-                <p className="pw-value">{sign.name}</p>
+
+              {/* Decorative: blurred past reading, and announced to nobody. A
+                  screen reader would otherwise read out three paragraphs the
+                  page is deliberately withholding. */}
+              <div className="pw-acct-draw-panel" aria-hidden="true">
+                <div className="pw-acct-draw-copy">
+                  <h3>La tua anima gemella</h3>
+                  <p>
+                    All’interno troverai uno schizzo curato nei minimi dettagli della tua
+                    anima gemella, insieme alla storia di dove e come vi incontrerete.
+                  </p>
+                  <p>
+                    Il tuo Segno Zodiacale rivela il tuo carisma esteriore, mentre il tuo
+                    Segno di Venere svela i tuoi desideri più profondi in amore.
+                  </p>
+                  <p>Preparati a scoprire i dettagli della storia d’amore che ti aspetta.</p>
+                </div>
               </div>
-              <div className="pw-trait">
-                <p className="pw-label">Tipo di lettura</p>
-                <p className="pw-value">Carta di Sinastria</p>
-              </div>
-            </div>
-            <div className="pw-sketch-reveal">
-              <p className="pw-rl">Anteprima della tua anima gemella</p>
-              <p className="pw-rv">
-                Questa lettura si basa sulla tua carta natale <span>{sign.name}</span> e rivela
-                gli allineamenti planetari che indicano l’identità della tua anima gemella e il
-                momento del vostro incontro.
+
+              <div className="pw-acct-draw-veil" aria-hidden="true" />
+
+              {/* Centred on the whole frame rather than on the portrait half,
+                  so it lines up with the caption below it. */}
+              <div className="pw-acct-lock">🔒</div>
+
+              <p className="pw-acct-cap">
+                <svg className="pw-acct-cap-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <rect x="3" y="7" width="10" height="7" rx="1.7" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M5.6 7V5.1a2.4 2.4 0 0 1 4.8 0V7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+                Bloccato finché non riscatti la tua lettura
               </p>
-              <p className="pw-rl" style={{ marginTop: 8 }}>Cosa rivelano le stelle</p>
-              <p className="pw-blur">
-                Dietro queste posizioni planetarie c’è una storia di amore profondo, di
-                appartenenza e del legame che stavi aspettando. La lettura svela indizi su un
-                incontro che può cambiarti la vita, già nelle prossime settimane.
-              </p>
             </div>
+
+            <ul className="pw-acct-proof">
+              <li>
+                <span className="pw-acct-proof-ico">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="9" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.7" />
+                    <path d="M3.5 18.6a5.5 5.5 0 0 1 11 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                    <path d="M16.2 5.3a3.2 3.2 0 0 1 0 5.4M17.6 14.2a5.5 5.5 0 0 1 3 4.4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <span><b>900+ utenti</b> hanno visto la loro anima gemella oggi.</span>
+              </li>
+              <li>
+                <span className="pw-acct-proof-ico">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M20.2 12.2a7.6 7.6 0 0 1-11 6.8l-4.7 1.4 1.4-4.5a7.6 7.6 0 1 1 14.3-3.7Z"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+                <span>Scelto da oltre <b>3 milioni</b> di persone.</span>
+              </li>
+            </ul>
+
+            {/* The same strip the landing carries, from the same component. */}
+            <PressMarquee />
           </div>
         </div>
 
@@ -329,15 +414,21 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
             </div>
 
             <div className="pw-pc">
-              <p className="pw-pc-eye">75% di sconto — il tuo sconto esclusivo</p>
+              <p className="pw-pc-eye">Il tuo sconto esclusivo</p>
               <p className="pw-pc-tag">
                 Sblocca la tua Lettura completa della Carta Natale dell’Anima Gemella a un prezzo unico e speciale:
               </p>
               <div className="pw-pc-amount">
                 <span className="pw-pc-cur">€</span><span className="pw-pc-num">9</span>
               </div>
+              {/* 29€ rather than the 79€ this anchored against before, matching
+                  the monthly price the legal line below already names: the full
+                  price is what the plan renews at, and the 9€ is the first
+                  month. The percentage came out of both this line and the
+                  eyebrow above because 29 to 9 is 69%, not the 75% they
+                  claimed. */}
               <p className="pw-pc-meta">
-                <s>79€</s> <span className="pw-pc-save">Risparmi 60€ (75% di sconto)</span>
+                <s>29€</s> <span className="pw-pc-save">Risparmi 20€ oggi</span>
               </p>
               <p style={{ fontSize: 13, color: 'var(--bk3)', fontWeight: 600, margin: '0 0 12px' }}>
                 Accesso immediato tramite l’App Auraly (iOS e Android)

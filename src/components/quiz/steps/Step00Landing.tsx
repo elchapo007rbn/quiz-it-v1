@@ -1,6 +1,6 @@
 'use client';
 import { PauseNotice } from '@/components/quiz/PauseNotice';
-import { PUBLICATION_LOGOS } from '@/data/quizData';
+import { PressMarquee } from '@/components/quiz/PressMarquee';
 
 interface Props { onStart: () => void; }
 
@@ -64,23 +64,7 @@ export function Step00Landing({ onStart }: Props) {
         </button>
       </div>
 
-      <div className="s00-marquee">
-        <div className="s00-marquee-label">In<br />primo piano</div>
-
-        <div className="s00-marquee-window">
-          <div className="s00-marquee-track">
-            {[...PUBLICATION_LOGOS, ...PUBLICATION_LOGOS].map((src, i) => (
-              <img
-                key={i}
-                className="s00-logo"
-                src={src}
-                alt={i < PUBLICATION_LOGOS.length ? `Testata ${i + 1}` : ''}
-                aria-hidden={i >= PUBLICATION_LOGOS.length ? true : undefined}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
+      <PressMarquee />
 
       <div className="s00-legal">
         <p>

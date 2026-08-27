@@ -1,4 +1,5 @@
 'use client';
+import { PauseNotice } from '@/components/quiz/PauseNotice';
 import { PUBLICATION_LOGOS } from '@/data/quizData';
 
 interface Props { onStart: () => void; }
@@ -85,6 +86,11 @@ export function Step00Landing({ onStart }: Props) {
           Ti invitiamo a leggerli prima di procedere.
         </p>
       </div>
+
+      {/* Renders nothing unless the visitor is on Android inside TikTok, and
+          nothing at all on a second visit. Mounted last so it never competes
+          with the landing for first paint. */}
+      <PauseNotice />
     </div>
   );
 }

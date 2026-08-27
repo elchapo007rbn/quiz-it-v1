@@ -33,6 +33,14 @@ To add a shadcn/ui component, run the CLI without installing it:
 deliberately absent from `package.json`: it is a scaffolding tool, nothing
 imports it, and as a dependency it dragged `msw` into every install.
 
+## Modo dev
+
+**Modo dev** is `npm run dev`: the build with the step arrows, the `N` badge and the
+`0 · Landing` chip on screen. Those three are how you confirm it — when they are absent
+you are looking at a production build (`next start`), which strips them as dead code.
+Reviewing the funnel page by page starts by running modo dev, and the arrows are what
+let you jump straight to the step under discussion.
+
 ## Code Style
 - TypeScript strict mode, no `any`
 - Named exports, PascalCase components, camelCase utils

@@ -8,21 +8,6 @@ import {
   wasPauseNoticeSeen,
 } from '@/lib/pauseNotice';
 
-/**
- * Review escape hatch, and it must stay `false` in anything published.
- *
- * When true the notice appears on every visit from every device, skipping both
- * the user agent check and the once-per-24h flag — which is what made it
- * reviewable on a real phone without clearing site data between passes. Shipped
- * true it would show the notice a second time to exactly the people who did
- * what it asked: closed the sheet, paused the feed, tapped the link again. That
- * is the loop `wasPauseNoticeSeen` exists to stop.
- *
- * Unlike a `NODE_ENV` guard this is a live runtime branch — nothing strips it
- * at build time, so the value here is the value that ships.
- */
-const ALWAYS_SHOW = false;
-
 /** Lets the landing paint before the notice interrupts it. */
 const ENTER_DELAY_MS = 400;
 /** Matches the exit transition in `globals.css`; unmounts once it has run. */
@@ -47,7 +32,7 @@ export function PauseNotice() {
   const [pointing, setPointing] = useState(false);
 
   useEffect(() => {
-    const bypass = ALWAYS_SHOW || isPauseNoticeForced();
+    const bypass = isPauseNoticeForced();
     if (!bypass && (!isAndroidTikTok() || wasPauseNoticeSeen())) return;
 
     // The write happens inside the timer, not here, and the difference matters.

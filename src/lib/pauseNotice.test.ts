@@ -110,6 +110,12 @@ describe('markPauseNoticeSeen', () => {
 });
 
 describe('isPauseNoticeForced', () => {
+  it('is always true in modo dev, whatever the query string', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    expect(isPauseNoticeForced('')).toBe(true);
+    expect(isPauseNoticeForced('?pausa=0')).toBe(true);
+  });
+
   it('honours ?pausa=1 only while the dev routes are enabled', () => {
     vi.stubEnv('NEXT_PUBLIC_DEV_ROUTES', '1');
     expect(isPauseNoticeForced('?pausa=1')).toBe(true);

@@ -2068,6 +2068,168 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   STEP 11 — PAUSE GATE (Android inside TikTok only)
+
+   Step 11 is Aura's 34-second voice message, and on Android the TikTok feed is
+   still playing with sound behind it. The step-0 notice cannot help the reader
+   who resumed a saved session straight into this step: step 0 never renders for
+   her, so she arrives here with a live feed and no warning. This is where the
+   ask is repeated, and it is the last cheap moment to make it — after this the
+   voice is already talking over the feed.
+
+   Unlike step 0's notice this one holds the audio until she answers, which is a
+   gate. It earns that because the cost of getting it wrong is the content
+   itself: half of Aura's message lost under a TikTok soundtrack. `Salta` is the
+   way past it for the reader who already paused.
+
+   The gate lives over the decorative loop rather than over the whole card so
+   the play button stays visible above it — the beak points at that button, and
+   an arrow aimed at something hidden explains nothing.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Wraps the decorative loop so the gate has an untransformed box to measure
+   and position against. Carries the video's own top margin so nothing on the
+   step moves when this wrapper is introduced. */
+.pg-stage {
+  position: relative;
+  margin-top: 14px;
+}
+.pg-stage .vm-avid { margin-top: 0; }
+
+.pg-gate {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 50%;
+  z-index: 2;
+  padding: 14px 13px 12px;
+  border-radius: 14px;
+  background: #FFFFFF;
+  /* Thicker and purple: this is a coach mark, and it has to read as a layer
+     over the content rather than another card in the column. */
+  border: 2px solid #A079F7;
+  box-shadow: 0 14px 34px rgba(70, 40, 140, .26);
+  /* `--pg-ox` is the distance from this box's left edge to the centre of the
+     play button, measured from the live elements. Both the beak and the
+     transform origin read it, so the card grows out of the button the reader
+     just pressed instead of out of its own middle. */
+  transform-origin: var(--pg-ox, 50%) 0;
+  transform: translateY(-50%) scale(.94);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 150ms ease-out, transform 150ms ease-out, visibility 0s 150ms;
+}
+.pg-gate[data-open='true'] {
+  transform: translateY(-50%) scale(1);
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 220ms cubic-bezier(.23, 1, .32, 1),
+              transform 220ms cubic-bezier(.23, 1, .32, 1),
+              visibility 0s;
+}
+
+/* A rotated square rather than a border triangle, so the purple outline runs
+   unbroken from the card into the beak. */
+.pg-beak {
+  position: absolute;
+  top: -9px;
+  left: calc(var(--pg-ox, 50%) - 7px);
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: #FFFFFF;
+  border-left: 2px solid #A079F7;
+  border-top: 2px solid #A079F7;
+  transform: rotate(45deg);
+}
+
+.pg-title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+  color: var(--iris600);
+}
+
+.pg-body {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #2B2145;
+}
+.pg-body b { font-weight: 800; color: #160F2B; }
+
+/* Both buttons do the same thing, and that is deliberate. `Capito!` is for the
+   reader who is about to go and pause; `Salta` is for the one who already did
+   on step 0 and does not need telling twice. The width is what separates them:
+   the primary path is visibly larger without the escape being dimmed to the
+   point of looking disabled. */
+.pg-actions {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.pg-skip,
+.pg-confirm {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 6px;
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: transform 140ms ease-out;
+}
+.pg-skip:active,
+.pg-confirm:active { transform: scale(.97); }
+
+.pg-skip {
+  background: #EFEAF9;
+  color: #6E6688;
+  font-weight: 600;
+}
+.pg-confirm {
+  background: var(--grad-iris);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* Press feedback on the trigger itself. Without it the tap that opens the gate
+   has no acknowledgement for the 220ms the card takes to arrive, which is long
+   enough to read as a missed press and earn a second tap. */
+.vm-playbtn { transition: transform 120ms ease-out; }
+.vm-playbtn:active { transform: scale(.97); }
+
+/* The recede. Only these three: the play button stays sharp because the beak
+   points at it. */
+.vm-bubble,
+.vm-avid,
+.vm-cta {
+  transition: filter 200ms ease-out, opacity 200ms ease-out;
+}
+.vm-wrap[data-gate='open'] .vm-bubble,
+.vm-wrap[data-gate='open'] .vm-avid,
+.vm-wrap[data-gate='open'] .vm-cta {
+  filter: blur(3px);
+  opacity: .55;
+}
+/* The CTA pulses on a loop. Blurring something that repaints every frame is the
+   expensive combination this funnel avoids everywhere else, so the loop is held
+   for as long as the blur is on it. The decorative video is paused from the
+   component for the same reason. */
+.vm-wrap[data-gate='open'] .vm-cta { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pg-gate,
+  .pg-gate[data-open='true'] { transform: translateY(-50%); }
+  .vm-playbtn:active,
+  .pg-skip:active,
+  .pg-confirm:active { transform: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
    DEV-ONLY STEP NAVIGATOR — not part of the funnel.
    Rendered only when NODE_ENV === 'development' (see DevStepNav.tsx), so
    `next build` never emits the markup. Delete this block together with

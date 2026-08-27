@@ -58,12 +58,20 @@ export function wasPauseNoticeSeen(now: number = Date.now()): boolean {
 }
 
 /**
- * Development escape hatch: `?pausa=1` forces the notice regardless of user
- * agent or of a previous visit, so it can be validated in a desktop browser and
- * on a repeat pass through the tunnel. Gated behind the same flag as the dev
- * routes, so the published site never honours it.
+ * Whether to show the Android prompts to someone who is not an Android reader
+ * inside TikTok.
+ *
+ * True in **modo dev** — the build with the step arrows — so both the step-0
+ * notice and the step-11 gate can be seen and adjusted on a desktop while
+ * working on them. The bundler replaces `NODE_ENV` with a literal, so this
+ * branch is dead code in `next build`, exactly like the step navigator.
+ *
+ * True in a production build only for `?pausa=1`, and only while the dev routes
+ * flag is on — that is the tunnel case, where the build is a real one but the
+ * reviewer is holding a phone rather than an Android device inside TikTok.
  */
 export function isPauseNoticeForced(search: string = location.search): boolean {
+  if (process.env.NODE_ENV === 'development') return true;
   if (process.env.NEXT_PUBLIC_DEV_ROUTES !== '1') return false;
   return new URLSearchParams(search).get('pausa') === '1';
 }

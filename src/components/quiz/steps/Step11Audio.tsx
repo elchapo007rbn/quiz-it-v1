@@ -1,7 +1,9 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AURA_AVATAR } from '@/data/quizData';
 import { useStagedReveal } from '@/hooks/useStagedReveal';
+import { PauseGate } from '@/components/quiz/PauseGate';
+import { isAndroidTikTok, isPauseNoticeForced } from '@/lib/pauseNotice';
 
 interface Props {
   onContinue: () => void;
@@ -10,6 +12,9 @@ interface Props {
 
 /** Original timer chain: message → "recording" → audio card → CTA. */
 const SEQUENCE = [1500, 2000, 5000, 5500] as const;
+
+/** Matches `.pg-gate`'s `left` in globals.css; the beak is measured against it. */
+const GATE_INSET = 16;
 
 const fmt = (t: number) => {
   if (!Number.isFinite(t)) return '00:00';
@@ -23,11 +28,88 @@ const Avatar = () => <img src={AURA_AVATAR} alt="Maestra Aura" />;
 
 export function Step11Audio({ onContinue, progressPct }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const playRef = useRef<HTMLButtonElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   const [dead, setDead] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
+  /**
+   * `none` — not an Android/TikTok reader, so no gate is rendered at all.
+   * `armed` — the next play tap opens it instead of starting the audio.
+   * `released` — answered. Still mounted so it can animate out, but inert.
+   */
+  const [gate, setGate] = useState<'none' | 'armed' | 'released'>('none');
+  const [gateOpen, setGateOpen] = useState(false);
+  const [originX, setOriginX] = useState(0);
   const stage = useStagedReveal(SEQUENCE);
+
+  /**
+   * The gate exists only where the collision does: Android, inside TikTok's
+   * WebView. Read after mount, never during render — the funnel is prerendered
+   * and a user-agent read while rendering would break hydration.
+   */
+  useEffect(() => {
+    // `isPauseNoticeForced` also arms it in modo dev and behind `?pausa=1` on a
+    // tunnel build, so the card can be reviewed without an Android device in
+    // hand. The step-0 notice reads the same switch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- post-mount by design; see above.
+    setGate(isAndroidTikTok() || isPauseNoticeForced() ? 'armed' : 'none');
+  }, []);
+
+  /**
+   * Stops the message when she leaves the app mid-playback.
+   *
+   * She has 34 seconds of Aura and no way to scrub back. Letting it run into an
+   * empty room costs her the half she came for, and unlike everything else in
+   * this component that is not a guess about her intent: the page is hidden.
+   */
+  useEffect(() => {
+    function onVisibility() {
+      if (document.visibilityState !== 'hidden') return;
+      const el = audioRef.current;
+      if (!el || el.paused) return;
+      el.pause();
+      setPlaying(false);
+    }
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
+
+  const start = () => {
+    const el = audioRef.current;
+    if (!el) return;
+    el.play().then(() => setPlaying(true)).catch(() => setDead(true));
+  };
+
+  const openGate = () => {
+    const btn = playRef.current;
+    const box = stageRef.current;
+    if (btn && box) {
+      // Measured rather than hardcoded: the avatar and the button keep their
+      // sizes across widths, but a fixed offset would drift silently on any
+      // screen that did not match the one it was written on.
+      const b = btn.getBoundingClientRect();
+      const s = box.getBoundingClientRect();
+      setOriginX(b.left + b.width / 2 - s.left - GATE_INSET);
+    }
+    // The loop behind the gate is about to be blurred. Blurring a playing video
+    // repaints it every frame, and this runs on the cheapest Android hardware
+    // in the funnel; paused, the blur rasterises once.
+    videoRef.current?.pause();
+    setGateOpen(true);
+  };
+
+  const release = () => {
+    setGate('released');
+    setGateOpen(false);
+    void videoRef.current?.play().catch(() => {});
+    // Started here and not after the exit transition: waiting 150ms to obey a
+    // tap is exactly the latency that makes an interface feel unheard. The card
+    // leaves over the audio that is already playing.
+    start();
+  };
 
   const toggle = () => {
     const el = audioRef.current;
@@ -35,15 +117,19 @@ export function Step11Audio({ onContinue, progressPct }: Props) {
     if (playing) {
       el.pause();
       setPlaying(false);
-    } else {
-      el.play().then(() => setPlaying(true)).catch(() => setDead(true));
+      return;
     }
+    if (gate === 'armed') {
+      openGate();
+      return;
+    }
+    start();
   };
 
   const pct = duration > 0 ? (current / duration) * 100 : 0;
 
   return (
-    <div className="vm-wrap">
+    <div className="vm-wrap" data-gate={gateOpen ? 'open' : undefined}>
       <div className="vm-pbc">
         <div className="vm-pbg">
           <div className="vm-pf" style={{ width: `${progressPct}%` }} />
@@ -85,6 +171,7 @@ export function Step11Audio({ onContinue, progressPct }: Props) {
             <div className="vm-arow">
               <Avatar />
               <button
+                ref={playRef}
                 className={`vm-playbtn${dead ? ' vm-dead' : ''}`}
                 onClick={toggle}
                 type="button"
@@ -123,18 +210,28 @@ export function Step11Audio({ onContinue, progressPct }: Props) {
                 file beats asking `canPlayType` and trusting the answer.
 
                 `<video>` carries no `alt`, so the label moves to `aria-label`. */}
-            <video
-              className="vm-avid"
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="auto"
-              aria-label="Anteprima della lettura"
-            >
-              <source src="/images/gif01.mp4" type="video/mp4" />
-              <source src="/images/gif01.webm" type="video/webm" />
-            </video>
+            {/* The wrapper is the gate's frame of reference: an untransformed
+                box to measure the beak against and to position the card in. It
+                carries the video's own top margin so the step does not move. */}
+            <div className="pg-stage" ref={stageRef}>
+              <video
+                ref={videoRef}
+                className="vm-avid"
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                aria-label="Anteprima della lettura"
+              >
+                <source src="/images/gif01.mp4" type="video/mp4" />
+                <source src="/images/gif01.webm" type="video/webm" />
+              </video>
+
+              {gate !== 'none' && (
+                <PauseGate open={gateOpen} originX={originX} onRelease={release} />
+              )}
+            </div>
 
             <audio
               ref={audioRef}

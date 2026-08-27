@@ -1608,6 +1608,466 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   STEP 0 — PAUSE NOTICE (Android inside TikTok only)
+
+   Eight of ten visitors arrive on Android, where the TikTok feed keeps playing
+   with sound behind the WebView. It collides with Aura's voice message on step
+   11 and with the VSL on step 15, and no front-end technique silences it, so
+   the notice asks her to pause the feed herself.
+
+   Two measured facts drive every number below, both from
+   `docs/research/VIEWPORT-TELEMETRY.md`:
+
+   1. TikTok's bar overlays the first ~90px of our viewport on arrival and only
+      retracts once the page is scrolled. The marker sits at 88px — the first
+      row that is reliably ours — and points up at the X above it. Nothing we
+      render can reach the X itself; it is native chrome.
+   2. The sheet is 518px tall at worst (iPhone 8) and 622px at best (Pixel 6).
+      The card is pinned below the marker and the picture is the pressure
+      valve: it shrinks with `clamp` so the band, the button and the closing
+      line all survive the short sheet.
+
+   Red means exactly two things on this screen: the dot that points at the X,
+   and the button. Everything else is purple, so the red never has to compete
+   with itself.
+   ═══════════════════════════════════════════════════════════════════════ */
+.pn-root {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Dim to focus. The blur is static — only the opacity animates — because
+   animating a filter radius repaints the whole layer every frame, and this
+   runs on the cheapest Android hardware in the funnel. */
+.pn-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 4, 12, .9);
+  opacity: 0;
+  /* The duration here is the exit; the open state overrides it with the slower
+     enter. Leaving is always faster than arriving. */
+  transition: opacity 150ms ease-out;
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .pn-backdrop {
+    background: rgba(6, 4, 12, .84);
+    -webkit-backdrop-filter: blur(9px) saturate(115%);
+    backdrop-filter: blur(9px) saturate(115%);
+  }
+}
+.pn-root[data-open='true'] .pn-backdrop {
+  opacity: 1;
+  transition-duration: 220ms;
+}
+
+/* ─── The marker: a dot under the X, never on it ───────────────────────── */
+.pn-marker {
+  position: absolute;
+  /* 24px. The 90px figure in the header above describes a bar that overlays the
+     page; a screenshot from the owner's own device shows it does not — TikTok's
+     chrome sits above our viewport and our first row is already ours. The dot
+     can therefore live near the top edge, which is where the X actually is. */
+  top: 24px;
+  left: 15px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #FF5A50;
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+}
+.pn-root[data-open='true'] .pn-marker {
+  opacity: 1;
+  transition-duration: 260ms;
+  transition-delay: 120ms;
+}
+
+.pn-marker-up {
+  width: 14px;
+  height: 14px;
+  animation: pn-bob 1.6s ease-in-out infinite;
+}
+@keyframes pn-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+
+.pn-marker-dot {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #E8352E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 260ms cubic-bezier(.23, 1, .32, 1);
+}
+.pn-marker-hand { width: 15px; height: 15px; fill: #FFF6F5; }
+
+/* Never from scale(0) — a ring that starts at nothing reads as a glitch. The
+   second ring is the same animation half a cycle late, which turns a blink
+   into a cadence. */
+.pn-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid #E8352E;
+  border-radius: 50%;
+  animation: pn-ring 1.6s cubic-bezier(.23, 1, .32, 1) infinite;
+}
+.pn-ring2 { animation-delay: 800ms; }
+@keyframes pn-ring {
+  from { transform: scale(.85); opacity: .8; }
+  to   { transform: scale(2.3); opacity: 0; }
+}
+
+/* ─── The card ─────────────────────────────────────────────────────────── */
+.pn-card {
+  position: absolute;
+  /* Never above 136px: that is where the marker ends, and the card must not
+     climb over the thing the whole notice points at. */
+  top: clamp(112px, 21vh, 132px);
+  left: 14px;
+  right: 14px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #FFFFFF;
+  box-shadow: 0 18px 44px rgba(12, 7, 24, .5);
+  opacity: 0;
+  transform: scale(.96);
+  transition: opacity 150ms ease-out, transform 150ms ease-out, filter 150ms ease-out;
+}
+.pn-root[data-open='true'] .pn-card {
+  opacity: 1;
+  transform: scale(1);
+  transition-duration: 220ms;
+  transition-timing-function: cubic-bezier(.23, 1, .32, 1);
+}
+
+.pn-head {
+  padding: clamp(14px, 3vh, 19px) 13px 0;
+  text-align: center;
+}
+
+/* Emoji rather than drawn paths: the alarm and the padlock are the two marks
+   the reader already knows by heart, and a hand-built lock reads as a UI
+   affordance she might be able to tap. */
+.pn-emoji {
+  font-size: .95em;
+  line-height: 1;
+  vertical-align: -1px;
+}
+
+/* Positive tracking, not negative. Negative tracking is right for large
+   mixed-case display text, but all-caps needs the opposite — capitals set
+   tight collide at the stems and the word stops reading as a word. */
+.pn-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: .012em;
+  color: #E0342B;
+}
+
+.pn-sub {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 1.34;
+  color: #15102A;
+}
+.pn-sub b { font-weight: 800; }
+
+/* Paper, not panel: the drawing is a pencil sketch on cream, and it is square,
+   so the frame that holds it is both. A wide frame would crop the portrait to
+   a band across the eyes. */
+.pn-media {
+  position: relative;
+  height: clamp(84px, 19vh, 128px);
+  aspect-ratio: 1;
+  margin: clamp(11px, 2.6vh, 16px) auto 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #EFE9DF;
+  border: 1px solid #E6DFD2;
+}
+
+/* A background image and not an `<img>`: with no image element there is no hit
+   target for the long-press menu to offer a download from. Same door the
+   testimonial and step-13 assets already close. */
+.pn-photo {
+  position: absolute;
+  inset: 0;
+  background-image: url('/images/soulmate-preview-male.webp');
+  background-size: cover;
+  background-position: center center;
+}
+
+/* Static. The marker, the speaker and the button already pulse; a fourth
+   heartbeat would leave nothing for the eye to settle on. */
+.pn-lock {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50px;
+  height: 50px;
+  margin: -25px 0 0 -25px;
+  border-radius: 50%;
+  background: var(--grad-iris);
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, .5), 0 6px 16px rgba(100, 49, 201, .35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 23px;
+  line-height: 1;
+}
+
+/* ─── The band: the instruction, and the heaviest thing below the fold ──── */
+.pn-bandwrap {
+  position: relative;
+  margin-top: clamp(19px, 4.2vh, 26px);
+}
+/* A halo, not a border. An outlined box read as a second card; the blur alone
+   lifts the band off the white without drawing another line on the screen. */
+.pn-bandwrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #8B5CF6;
+  filter: blur(10px);
+  opacity: .22;
+}
+
+/* Full bleed, and not for looks. The long line is 49 characters; inset inside
+   the card's padding it capped the type at 11.5px. Edge to edge it gains 30px,
+   which is exactly what 12.5px costs. */
+.pn-band {
+  position: relative;
+  background: #E9DEFF;
+  padding: 17px 12px clamp(11px, 2.4vh, 14px);
+  text-align: center;
+}
+
+.pn-speaker {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  margin-left: -16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--iris600);
+  border: 3px solid #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pn-speaker svg { width: 17px; height: 17px; }
+/* Purple rings, red rings on the marker. Same gesture, two different jobs:
+   one says "the sound is the problem", the other says "tap here". */
+.pn-sring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--iris600);
+  border-radius: 50%;
+  animation: pn-sring 1.6s cubic-bezier(.23, 1, .32, 1) infinite;
+}
+.pn-sring2 { animation-delay: 800ms; }
+@keyframes pn-sring {
+  from { transform: scale(.9); opacity: .6; }
+  to   { transform: scale(2);  opacity: 0; }
+}
+
+.pn-bandtext {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #1B1233;
+}
+.pn-bandtext b { font-weight: 800; }
+
+.pn-foot {
+  padding: clamp(12px, 2.6vh, 15px) 13px clamp(13px, 2.8vh, 16px);
+  text-align: center;
+}
+
+/* `nowrap` is the requirement; the clamp is what makes it survivable. At 360px
+   the label has 288px of room and 35 uppercase characters need most of them —
+   a fixed size breaks into two lines on a 320px screen. */
+.pn-cta {
+  position: relative;
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 999px;
+  padding: 13px 8px;
+  background: #E8352E;
+  color: #FFF6F5;
+  font-family: inherit;
+  font-size: clamp(9.5px, 3.05vw, 11px);
+  font-weight: 700;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  cursor: pointer;
+  transform: translateY(8px);
+  transition: transform 260ms cubic-bezier(.23, 1, .32, 1);
+}
+.pn-cta:active {
+  transform: scale(.97);
+  transition-duration: 160ms;
+}
+.pn-cta-label { position: relative; z-index: 1; }
+
+/* The blur is baked into a static layer and only its opacity and scale move.
+   Animating the blur radius itself would repaint the button every frame, which
+   is the one thing a cheap Android WebView cannot afford here. */
+.pn-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #E8352E;
+  filter: blur(11px);
+  animation: pn-glow 2s ease-in-out infinite;
+}
+@keyframes pn-glow {
+  0%, 100% { opacity: .32; transform: scale(1); }
+  50%      { opacity: .6;  transform: scale(1.05); }
+}
+
+.pn-tease {
+  margin: clamp(11px, 2.6vh, 16px) 0 0;
+  font-size: 11px;
+  font-style: italic;
+  line-height: 1.35;
+  color: #15102A;
+}
+
+/* Entrance stagger. Position only, never opacity — the card is already fading
+   in around these, and two fades on the same pixels wash each other out. */
+.pn-title,
+.pn-sub,
+.pn-media,
+.pn-bandwrap,
+.pn-tease {
+  transform: translateY(8px);
+  transition: transform 260ms cubic-bezier(.23, 1, .32, 1);
+}
+.pn-root[data-open='true'] .pn-title    { transform: none; }
+.pn-root[data-open='true'] .pn-sub      { transform: none; transition-delay: 40ms; }
+.pn-root[data-open='true'] .pn-media    { transform: none; transition-delay: 80ms; }
+.pn-root[data-open='true'] .pn-bandwrap { transform: none; transition-delay: 120ms; }
+.pn-root[data-open='true'] .pn-cta      { transform: none; transition-delay: 160ms; }
+.pn-root[data-open='true'] .pn-tease    { transform: none; transition-delay: 200ms; }
+
+/* ─── After the tap: attention moves from the card to the marker ───────── */
+.pn-root[data-pointing='true'] .pn-card {
+  transform: translateY(-14px) scale(.97);
+  opacity: .45;
+  /* 2.5px, and only once. The radius is small enough to rasterise cheaply and
+     the transition runs a single time on a tap — this is not a per-frame blur
+     the way an animated backdrop would be. */
+  filter: blur(2.5px);
+  transition-duration: 320ms;
+  transition-delay: 60ms;
+}
+
+/* --- The callout: a coach mark anchored to the dot --------------------- */
+/* It exists only after the tap, which is the one moment the card has nothing
+   left to say and the marker has everything. */
+.pn-callout {
+  position: absolute;
+  /* Aligned so the arrow lands on the dot's centre: marker top + 28px, less the
+     arrow's own offset inside this box. Moving the marker moves this too. */
+  top: 29px;
+  left: 55px;
+  /* Narrower than the card on purpose. At the card's own width the two lines
+     ended well short of the right edge and the block read as misaligned with
+     the dot; pulling the edge in lets the text fill the box it sits in. */
+  right: 28px;
+  z-index: 2;
+  padding: 11px 13px;
+  border-radius: 12px;
+  background: #E8352E;
+  color: #FFF6F5;
+  text-align: left;
+  box-shadow: 0 10px 26px rgba(232, 53, 46, .34);
+  opacity: 0;
+  visibility: hidden;
+  /* Grows out of the dot, not out of its own centre. The spatial link between
+     the marker and the words is the entire reason the callout is here. */
+  transform-origin: left center;
+  transform: scale(.9) translateX(-8px);
+  transition: opacity 150ms ease-out, transform 150ms ease-out, visibility 0s 150ms;
+}
+.pn-root[data-pointing='true'] .pn-callout {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  /* Late by 140ms on purpose: the card recedes first, then the words arrive.
+     Simultaneous would read as two unrelated things moving at once. */
+  transition: opacity 280ms cubic-bezier(.23, 1, .32, 1) 140ms,
+              transform 280ms cubic-bezier(.23, 1, .32, 1) 140ms,
+              visibility 0s;
+}
+/* A rotated square rather than a border triangle, so the shadow stays whole. */
+.pn-callout::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 17px;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: #E8352E;
+  transform: rotate(45deg);
+}
+
+.pn-ctext {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.42;
+  text-wrap: pretty;
+}
+.pn-ctext b { font-weight: 800; }
+.pn-ctext + .pn-ctext {
+  margin-top: 7px;
+  font-weight: 700;
+}
+.pn-root[data-pointing='true'] .pn-marker-dot { transform: scale(1.28); }
+.pn-root[data-pointing='true'] .pn-ring { animation-duration: 1.05s; }
+/* The card is on its way out of focus; its children must not re-enter. */
+.pn-root[data-pointing='true'] .pn-cta:active { transform: none; }
+
+@media (prefers-reduced-transparency: reduce) {
+  .pn-backdrop {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgba(6, 4, 12, .94);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pn-marker-up,
+  .pn-glow { animation: none; }
+  .pn-ring  { animation: none; transform: scale(1.45); opacity: .4; }
+  .pn-sring { animation: none; transform: scale(1.35); opacity: .35; }
+  .pn-title,
+  .pn-sub,
+  .pn-media,
+  .pn-bandwrap,
+  .pn-cta,
+  .pn-tease { transform: none; transition-delay: 0s; }
+  .pn-root[data-pointing='true'] .pn-card { transform: none; }
+  .pn-callout,
+  .pn-root[data-pointing='true'] .pn-callout { transform: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
    DEV-ONLY STEP NAVIGATOR — not part of the funnel.
    Rendered only when NODE_ENV === 'development' (see DevStepNav.tsx), so
    `next build` never emits the markup. Delete this block together with

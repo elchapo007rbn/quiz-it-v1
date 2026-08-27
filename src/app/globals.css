@@ -318,21 +318,29 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
 @keyframes vmPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
 @keyframes vmBlink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 .vm-typing { display: flex; align-items: center; gap: 10px; padding: 10px 4px; margin: 8px 0; }
-.vm-typing img { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #e9d5ff; object-fit: cover; }
+.vm-typing img { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #e9d5ff; object-fit: cover; }
 .vm-dots { display: flex; gap: 5px; }
 .vm-dots span { width: 8px; height: 8px; border-radius: 50%; background: #c4b5fd; animation: vmTb .6s infinite; }
 .vm-dots span:nth-child(2) { animation-delay: .15s; }
 .vm-dots span:nth-child(3) { animation-delay: .3s; }
-.vm-bubble { display: flex; gap: 11px; align-items: flex-start; margin: 10px 0; animation: vmFadeUp .4s ease; }
-.vm-bubble img { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #e9d5ff; object-fit: cover; flex-shrink: 0; }
-.vm-bubble .vm-txt { background: #fff; border: 1px solid #efe3fb; border-radius: 16px; border-top-left-radius: 5px; padding: 14px 16px; font-size: 15px; color: #39304f; line-height: 1.55; }
+/* The same bubble as step 13, down to the 4px tail and the 28px avatar sitting
+   outside it. These two steps are the only places in the funnel where Aura
+   speaks, and a reader who meets her here and again two screens later should be
+   looking at one messenger, not two. */
+.vm-bubble { display: flex; gap: 8px; align-items: flex-end; margin: 0 0 14px; animation: vmFadeUp .4s ease; }
+.vm-bubble img { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #e9d5ff; object-fit: cover; flex-shrink: 0; }
+.vm-bubble .vm-txt { max-width: 272px; background: #fff; border: 0; border-radius: 18px 18px 18px 4px; padding: 10px 14px; font-size: 15px; color: #39304f; line-height: 1.4; }
 .vm-bubble .vm-txt strong { color: #5b2e9e; }
 .vm-rec { display: flex; align-items: center; gap: 8px; }
 .vm-rec .vm-mic { color: #ef4444; font-size: 18px; animation: vmBlink 1s infinite; }
 .vm-rec .vm-lbl { font-size: 13px; color: #9a86c0; }
-.vm-audiocard { background: #fff; border: 1px solid #e9d5ff; border-radius: 18px; box-shadow: 0 4px 16px rgba(124, 58, 237, .08); padding: 14px; margin: 12px 0; animation: vmFadeUp .45s ease; }
-.vm-arow { display: flex; align-items: center; gap: 12px; }
-.vm-arow > img { width: 48px; height: 48px; border-radius: 50%; border: 2px solid #e9d5ff; object-fit: cover; flex-shrink: 0; }
+/* The voice note is a message too, so the face comes out of the card and the
+   card becomes the bubble. `min-width: 0` on the body is what lets the progress
+   track shrink instead of pushing the whole bubble past the avatar. */
+.vm-audiocard { display: flex; align-items: flex-end; gap: 8px; margin: 0 0 14px; animation: vmFadeUp .45s ease; }
+.vm-audiocard > img { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #e9d5ff; object-fit: cover; flex-shrink: 0; }
+.vm-abody { flex: 1; min-width: 0; background: #fff; border: 0; border-radius: 18px 18px 18px 4px; box-shadow: 0 4px 16px rgba(124, 58, 237, .08); padding: 12px; }
+.vm-arow { display: flex; align-items: center; gap: 10px; }
 .vm-playbtn { width: 44px; height: 44px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); border: none; border-radius: 50%; color: #fff; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 3px 10px rgba(124, 58, 237, .35); }
 .vm-playbtn.vm-dead { opacity: .35; pointer-events: none; }
 .vm-atrack { flex: 1; }
@@ -356,11 +364,46 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
 .ss-h1 { font-size: 31px; line-height: 1.14; font-weight: 800; color: #1e1535; margin: 14px 0 6px; }
 .ss-h1 span { color: #7c3aed; }
 .ss-sub { font-size: 15px; color: #6b5b86; }
-.ss-stats { display: flex; justify-content: center; align-items: center; gap: 16px; background: #fff; border: 1px solid #ebdffa; border-radius: 14px; padding: 12px; margin-bottom: 18px; }
-.ss-stat { text-align: center; }
-.ss-stat b { display: block; font-size: 19px; font-weight: 800; color: #7c3aed; }
-.ss-stat small { font-size: 11px; color: #8a7ba5; }
-.ss-div { width: 1px; height: 30px; background: #ebdffa; }
+/* Two tiles side by side, each carrying its whole claim on one line.
+
+   This was one bordered card with a hairline divider, the number stacked over
+   its label. Stacked, "letture consegnate" wrapped at 360px and the block stood
+   74px tall to say two short things. Inline, each claim fits one line and the
+   pair costs half that.
+
+   #efeaff rather than the reference's purple-50, which resolves to #faf5ff -
+   this step's own page background. Taken literally the tiles would have been
+   invisible; this is the next step up the same ramp. */
+.ss-stats { display: flex; gap: 8px; width: 100%; max-width: 400px; margin: 0 auto 18px; }
+
+/* `white-space: nowrap` is the requirement, and the clamp is what makes it
+   safe: at 320px each tile is 140px wide, and 12.5px type would overflow rather
+   than wrap. It gives up half a pixel of size instead. */
+.ss-stat {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 9px 6px;
+  background: #efeaff;
+  border-radius: 8px;
+  font-size: clamp(11px, 3.2vw, 12.5px);
+  line-height: 1.2;
+  color: #6b5b86;
+  white-space: nowrap;
+}
+
+.ss-stat b { font-weight: 700; color: #7c3aed; }
+
+/* <small> would otherwise shrink to 0.8em of a size that is already clamped,
+   and the two halves of one line would stop matching. */
+.ss-stat small { font-size: inherit; }
+
+/* Left of the number and off it. It used to be welded to the digits as the
+   single string "4.9★", so there was nowhere to put the space. */
+.ss-star { color: #7c3aed; margin-right: 4px; }
 /* `grid-auto-rows: 1fr` replaces `align-items: start`: every card now takes the
    tallest height in the grid instead of hugging its own text, so a longer quote
    no longer leaves one card 18px taller than the rest. */
@@ -410,27 +453,78 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
 @keyframes lrFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes lrPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
 @keyframes lrTb { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-.lr-btn { display: block; width: 100%; max-width: 360px; margin: 16px auto; padding: 18px 32px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; font-size: 18px; font-weight: 700; font-family: inherit; border: none; border-radius: 9999px; cursor: pointer; box-shadow: 0 4px 15px rgba(124, 58, 237, .3); transition: all .3s; animation: lrPulse 2s infinite; }
+.lr-btn { display: block; width: 100%; max-width: 300px; margin: 16px auto 0; padding: 14px 20px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; font-size: 15px; line-height: 1.3; font-weight: 700; font-family: inherit; border: none; border-radius: 9999px; cursor: pointer; box-shadow: 0 4px 15px rgba(124, 58, 237, .3); transition: all .3s; animation: lrPulse 2s infinite; }
 .lr-btn:hover { background: linear-gradient(135deg, #7c3aed, #6d28d9); box-shadow: 0 6px 20px rgba(124, 58, 237, .4); transform: scale(1.02); }
-.lr-bubble { background: linear-gradient(135deg, #faf5ff, #fff); padding: 16px; border-radius: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, .1); border: 1px solid #e9d5ff; max-width: 480px; margin: 12px auto; display: flex; gap: 12px; align-items: flex-start; }
-.lr-bubble img.lr-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e9d5ff; flex-shrink: 0; }
-.lr-bubble p { font-size: 15px; color: #374151; line-height: 1.6; text-align: left; }
+/* The two things Aura says are chat bubbles, not cards.
+
+   They used to carry a border, a shadow, a 16px radius and 16-20px of padding
+   around a 40px avatar - container chrome wrapped around a single sentence,
+   which cost 374px of a 622px screen for two short lines. A bubble is a fill
+   that hugs its text with the avatar beside it, the way every messenger the
+   reader already uses draws one. Same words, same emoji, 120px back.
+
+   The 4px corner is the tail: the bubble points down-left at the face that
+   said it. */
+.lr-bubble { display: flex; align-items: flex-end; gap: 8px; max-width: 480px; margin: 0 auto 14px; }
+.lr-bubble img.lr-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 2px solid #e9d5ff; flex-shrink: 0; }
+/* `margin: 0` is load-bearing: the project ships no paragraph reset, so a bare
+   <p> carries the browser's 1em top and bottom. Inside the old card that
+   margin just read as extra padding - it was part of why one sentence stood
+   160px tall. Now that the <p> IS the bubble, the same margin drops the avatar
+   below it, because flex-end aligns the margin box, not the ink. */
+.lr-bubble p { margin: 0; max-width: 272px; background: #fff; border-radius: 18px 18px 18px 4px; padding: 10px 14px; font-size: 15px; line-height: 1.4; color: #374151; text-align: left; }
 .lr-typing { display: flex; align-items: center; gap: 8px; padding: 16px; margin: 12px auto; max-width: 480px; }
 .lr-typing img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #e9d5ff; }
 .lr-dots { display: flex; gap: 4px; }
 .lr-dots span { width: 8px; height: 8px; background: #c4b5fd; border-radius: 50%; animation: lrTb .6s infinite; }
 .lr-dots span:nth-child(2) { animation-delay: .15s; }
 .lr-dots span:nth-child(3) { animation-delay: .3s; }
-.lr-image { background: #fff; border-radius: 8px; padding: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, .1); border: 1px solid #e5e7eb; margin: 12px 0; position: relative; animation: lrFadeIn .5s ease; }
-.lr-image img.lr-bg { width: 100%; border-radius: 8px; display: block; min-height: 200px; background: linear-gradient(135deg,#f5deb3,#deb887); }
-.lr-overlay { position: absolute; top: 18%; left: 5%; width: 44%; font-family: var(--font-script), 'Dancing Script', cursive; transform: rotate(-3deg); color: #1e3a5f; line-height: 1.7; pointer-events: none; text-align: left; }
+/* Revealed by the image's own `onLoad`, not by the staged-reveal clock. The
+   handwriting is DOM text sitting over the photograph, so on a slow connection
+   it painted the reader's name onto an empty beige rectangle and the card
+   faded in underneath it afterwards. Gating the block on the bytes means the
+   paper always arrives before the writing. */
+.lr-image {
+  background: #fff;
+  border-radius: 18px 18px 18px 4px;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
+  border: 0;
+  /* 36px = the 28px avatar plus the 8px gap, so the card starts on exactly the
+     same line as the words in the bubbles above and below it. It is a message
+     from the same sender, in the same column. */
+  margin: 0 0 14px 36px;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity .45s cubic-bezier(.23, 1, .32, 1), transform .45s cubic-bezier(.23, 1, .32, 1);
+}
+
+.lr-image.lr-card-ready { opacity: 1; transform: none; }
+.lr-image img.lr-bg { width: 100%; border-radius: inherit; display: block; min-height: 200px; background: linear-gradient(135deg,#f5deb3,#deb887); }
+/* Written onto the card a beat after it lands, rather than with it. The delay
+   is short enough to read as one gesture and long enough that the two can
+   never look like separate objects arriving. */
+.lr-overlay { position: absolute; top: 18%; left: 5%; width: 44%; font-family: var(--font-script), 'Dancing Script', cursive; transform: rotate(-3deg); color: #1e3a5f; line-height: 1.7; pointer-events: none; text-align: left; opacity: 0; transition: opacity .35s ease .18s; }
+.lr-card-ready .lr-overlay { opacity: 1; }
 .lr-overlay .lr-line { display: block; font-size: clamp(11px, 3.8vw, 18px); font-style: italic; }
 .lr-overlay .lr-line strong { font-weight: 700; }
-.lr-location { background: linear-gradient(135deg, #7c3aed, #6366f1); padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(124, 58, 237, .3); margin: 12px 0; animation: lrFadeIn .5s ease; }
-.lr-location .lr-inner { display: flex; align-items: flex-start; gap: 12px; }
-.lr-location img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .4); flex-shrink: 0; }
-.lr-location p { color: #fff; font-size: 15px; line-height: 1.6; text-align: left; }
+/* Her second message, same bubble as the first - only filled, because this one
+   carries the offer. */
+.lr-location { max-width: 480px; margin: 0 auto; animation: lrFadeIn .5s ease; }
+.lr-location .lr-inner { display: flex; align-items: flex-end; gap: 8px; }
+.lr-location img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255, 255, 255, .5); flex-shrink: 0; }
+.lr-location p { margin: 0; max-width: 272px; background: linear-gradient(135deg, #7c3aed, #6366f1); border-radius: 18px 18px 18px 4px; padding: 10px 14px; color: #fff; font-size: 15px; line-height: 1.4; text-align: left; box-shadow: 0 4px 15px rgba(124, 58, 237, .28); }
 .lr-location strong { color: #fde68a; text-decoration: underline; }
+
+/* A button that breathes on a two-second loop for as long as the step is open
+   is precisely the slow oscillation this setting exists to stop. The card's
+   entrance keeps its fade, which carries meaning; the movement goes. */
+@media (prefers-reduced-motion: reduce) {
+  .lr-btn { animation: none; }
+  .lr-image { transform: none; }
+}
 
 /* ====== STEP 14: Email capture (evD-*) ====== */
 /* Stacks from the top like every other screen in the funnel. It used to carry
@@ -611,22 +705,116 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
   border: 1px solid #e9d5ff;
 }
 
-.pw-vsl-title {
-  font-family: var(--font-serif), 'Playfair Display', serif;
-  font-weight: 900;
-  font-size: 26px;
-  line-height: 1.13;
-  color: var(--bk);
-  margin: 0 0 10px;
-  text-align: center;
+/* The chip that counts the gate down, in the slot the kicker used to hold.
+   Not built on .pw-vsl-kicker: that one is uppercase with .1em of tracking,
+   which is fine for four words and overflows a 360px screen at the length of a
+   sentence plus a clock. */
+.pw-rt {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  margin-bottom: 14px;
+  padding: 7px 15px 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--acc);
+  color: var(--pd);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.pw-vsl-title em {
-  font-style: italic;
+/* Breathing, not blinking. The lock is the one thing on screen saying the wait
+   is still running while the video plays, and a hard blink beside a moving
+   video reads as a glitch. */
+.pw-rt-ico {
+  font-size: 12px;
+  line-height: 1;
+  animation: pwRtGlow 2.6s ease-in-out infinite;
+}
+
+@keyframes pwRtGlow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .55; transform: scale(.92); }
+}
+
+/* A pulse tied to nothing the reader controls is exactly the animation this
+   setting exists for. The lock stays; it stops moving. */
+@media (prefers-reduced-motion: reduce) {
+  .pw-rt-ico { animation: none; }
+}
+
+/* Tabular figures where the font has them; the per-character cells below are
+   what actually holds the columns, because DM Sans does not. */
+.pw-rt-num {
+  display: inline-flex;
+  font-weight: 800;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
   background: linear-gradient(90deg, var(--pd), var(--p2));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  transition: opacity .2s ease;
+}
+
+.pw-rt-done {
+  border-color: rgba(22, 163, 74, .35);
+  background: rgba(236, 253, 243, .9);
+  color: var(--ok);
+}
+
+.pw-rt-done .pw-rt-ico { animation: none; }
+
+/* .7em is the widest digit DM Sans draws at this size, so every digit gets the
+   same column and none of them can move. The colon is narrow and fixed too. */
+.pw-rt-d { display: inline-block; width: .7em; text-align: center; }
+.pw-rt-colon { display: inline-block; width: .3em; text-align: center; }
+
+/* The gradient is the only thing colouring the digits, so a browser without
+   background-clip would paint them transparent — invisible, on the one element
+   whose whole job is a number. */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .pw-rt-num { background: none; color: var(--pd); }
+}
+
+/* The body face at 800, which is .ss-h1 on step 12 — the same headline
+   treatment the reader has already met twice by the time she gets here. The
+   Playfair italic this used to carry was the only serif left above the fold.
+
+   Sized off the viewport rather than fixed at 26px. This headline is a full
+   sentence now, and 26px put it at four lines inside the TikTok sheet, which
+   pushed the player below the fold on a 360px screen. It settles at ~22px
+   there and reaches 25px on a normal phone. */
+.pw-vsl-title {
+  font-weight: 800;
+  font-size: clamp(20px, 6vw, 25px);
+  line-height: 1.18;
+  letter-spacing: -.01em;
+  color: var(--bk);
+  margin: 0 0 10px;
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* Not italic, and that is the fix rather than a preference. `background-clip:
+   text` paints through the inline box, and an italic glyph leans past that box
+   on the right - which is what clipped the last letter of "Essere". An upright
+   face has nothing hanging over the edge to lose. */
+.pw-vsl-title em {
+  font-style: normal;
+  background: linear-gradient(90deg, var(--pd), var(--p2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* The gradient is the only thing colouring these words, so a browser without
+   background-clip would paint them transparent - the headline would lose its
+   first six words rather than just its colour. */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .pw-vsl-title em { background: none; color: var(--pd); }
 }
 
 .pw-vsl-sub {
@@ -1695,7 +1883,7 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
 .chat-bubble img,          /* step 8, 9  — Maestra Aura */
 .vm-typing img,            /* step 11    — Maestra Aura */
 .vm-bubble img,            /* step 11    — Maestra Aura */
-.vm-arow > img,            /* step 11    — Maestra Aura */
+.vm-audiocard > img,       /* step 11    — Maestra Aura */
 .lr-typing img,            /* step 13    — Maestra Aura */
 .lr-location img,          /* step 13    — Maestra Aura */
 .lr-bubble img.lr-avatar,  /* step 13    — Maestra Aura */

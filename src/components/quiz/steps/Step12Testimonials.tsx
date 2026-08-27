@@ -28,9 +28,8 @@ export function Step12Testimonials({ onContinue, progressPct }: Props) {
         </div>
 
         <div className="ss-stats">
-          <div className="ss-stat"><b>74,000+</b><small>letture consegnate</small></div>
-          <div className="ss-div" />
-          <div className="ss-stat"><b>4.9★</b><small>valutazione media</small></div>
+          <div className="ss-stat"><b>74,000+</b><small>schizzi creati</small></div>
+          <div className="ss-stat"><b><span className="ss-star">★</span>4.9</b><small>valutazione media</small></div>
         </div>
 
         <div className="ss-grid">

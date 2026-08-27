@@ -168,84 +168,91 @@ export function Step11Audio({ onContinue, progressPct }: Props) {
 
         {stage > 2 && (
           <div className="vm-audiocard">
-            <div className="vm-arow">
-              <Avatar />
-              <button
-                ref={playRef}
-                className={`vm-playbtn${dead ? ' vm-dead' : ''}`}
-                onClick={toggle}
-                type="button"
-                aria-label={playing ? 'Pausa' : 'Riproduci'}
-              >
-                {playing ? '⏸' : '▶'}
-              </button>
-              <div className="vm-atrack">
-                <div className="vm-atimes">
-                  <span>{fmt(current)}</span>
-                  <span>{fmt(duration)}</span>
-                </div>
-                <div className="vm-abar">
-                  <div className="vm-afill" style={{ width: `${pct}%` }} />
+            <Avatar />
+            {/* The card's own contents, so the avatar can sit outside it the way
+                it does on every other thing Aura says. `.pg-stage` stays inside
+                here: it is the gate's frame of reference, and the beak's
+                `originX` is measured from its live rect against the play
+                button's, so both moving together costs nothing. */}
+            <div className="vm-abody">
+              <div className="vm-arow">
+                <button
+                  ref={playRef}
+                  className={`vm-playbtn${dead ? ' vm-dead' : ''}`}
+                  onClick={toggle}
+                  type="button"
+                  aria-label={playing ? 'Pausa' : 'Riproduci'}
+                >
+                  {playing ? '⏸' : '▶'}
+                </button>
+                <div className="vm-atrack">
+                  <div className="vm-atimes">
+                    <span>{fmt(current)}</span>
+                    <span>{fmt(duration)}</span>
+                  </div>
+                  <div className="vm-abar">
+                    <div className="vm-afill" style={{ width: `${pct}%` }} />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Matched to the step 0 and step 3 players, which are the two that
-                do render inside TikTok's in-app browser. This one differed from
-                them in exactly two ways and rendered nothing on either iPhone or
-                Android:
+              {/* Matched to the step 0 and step 3 players, which are the two that
+                  do render inside TikTok's in-app browser. This one differed from
+                  them in exactly two ways and rendered nothing on either iPhone or
+                  Android:
 
-                `preload="auto"`. Without it WebKit defers fetching media data,
-                and a muted autoplay that never gets data never paints a frame —
-                the flat lilac the reader saw is this element's own CSS
-                background showing through an empty video box.
+                  `preload="auto"`. Without it WebKit defers fetching media data,
+                  and a muted autoplay that never gets data never paints a frame —
+                  the flat lilac the reader saw is this element's own CSS
+                  background showing through an empty video box.
 
-                A second `<source>`, and the MP4 first. Measured on the device
-                that failed: given only the WebM this player reported MediaError
-                4, SRC_NOT_SUPPORTED — TikTok's WebView does not decode VP9, and
-                the flat lilac was an empty video box, not a slow one. MP4 leads
-                rather than trails because for this clip it is both universally
-                playable and the smaller file (373KB against 595KB), and because
-                useAssetPrefetch warms exactly one of the two: a single named
-                file beats asking `canPlayType` and trusting the answer.
+                  A second `<source>`, and the MP4 first. Measured on the device
+                  that failed: given only the WebM this player reported MediaError
+                  4, SRC_NOT_SUPPORTED — TikTok's WebView does not decode VP9, and
+                  the flat lilac was an empty video box, not a slow one. MP4 leads
+                  rather than trails because for this clip it is both universally
+                  playable and the smaller file (373KB against 595KB), and because
+                  useAssetPrefetch warms exactly one of the two: a single named
+                  file beats asking `canPlayType` and trusting the answer.
 
-                `<video>` carries no `alt`, so the label moves to `aria-label`. */}
-            {/* The wrapper is the gate's frame of reference: an untransformed
-                box to measure the beak against and to position the card in. It
-                carries the video's own top margin so the step does not move. */}
-            <div className="pg-stage" ref={stageRef}>
-              <video
-                ref={videoRef}
-                className="vm-avid"
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="auto"
-                aria-label="Anteprima della lettura"
-              >
-                <source src="/images/gif01.mp4" type="video/mp4" />
-                <source src="/images/gif01.webm" type="video/webm" />
-              </video>
+                  `<video>` carries no `alt`, so the label moves to `aria-label`. */}
+              {/* The wrapper is the gate's frame of reference: an untransformed
+                  box to measure the beak against and to position the card in. It
+                  carries the video's own top margin so the step does not move. */}
+              <div className="pg-stage" ref={stageRef}>
+                <video
+                  ref={videoRef}
+                  className="vm-avid"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
+                  aria-label="Anteprima della lettura"
+                >
+                  <source src="/images/gif01.mp4" type="video/mp4" />
+                  <source src="/images/gif01.webm" type="video/webm" />
+                </video>
 
-              {gate !== 'none' && (
-                <PauseGate open={gateOpen} originX={originX} onRelease={release} />
+                {gate !== 'none' && (
+                  <PauseGate open={gateOpen} originX={originX} onRelease={release} />
+                )}
+              </div>
+
+              <audio
+                ref={audioRef}
+                src="/audio-quiz-it.m4a"
+                preload="metadata"
+                onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
+                onTimeUpdate={e => setCurrent(e.currentTarget.currentTime)}
+                onEnded={() => setPlaying(false)}
+                onError={() => setDead(true)}
+              />
+
+              {dead && (
+                <p className="vm-asset-err">L’audio si sta caricando — puoi comunque proseguire.</p>
               )}
             </div>
-
-            <audio
-              ref={audioRef}
-              src="/audio-quiz-it.m4a"
-              preload="metadata"
-              onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
-              onTimeUpdate={e => setCurrent(e.currentTarget.currentTime)}
-              onEnded={() => setPlaying(false)}
-              onError={() => setDead(true)}
-            />
-
-            {dead && (
-              <p className="vm-asset-err">L’audio si sta caricando — puoi comunque proseguire.</p>
-            )}
           </div>
         )}
 

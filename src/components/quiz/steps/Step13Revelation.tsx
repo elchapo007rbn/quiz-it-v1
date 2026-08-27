@@ -1,7 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { preload } from 'react-dom';
 import { AURA_AVATAR, SIGN_BY_NAME } from '@/data/quizData';
 import { useStagedReveal } from '@/hooks/useStagedReveal';
+import { placeLabel } from '@/lib/italianPlaceNames';
 
 interface Props {
   name: string;
@@ -12,6 +14,8 @@ interface Props {
 
 /** Original chain: message → revelation image → location card + CTA. */
 const SEQUENCE = [1000, 1800, 2600] as const;
+
+const CARD_SRC = '/images/carta-italia.webp';
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
@@ -51,7 +55,10 @@ async function resolveCity(signal: AbortSignal): Promise<string> {
       const city = mapped?.city;
       if (typeof city === 'string' && city && city.toLowerCase() !== 'unknown') {
         const region = typeof mapped?.region === 'string' ? mapped.region : '';
-        return region ? `${city}, ${region}` : city;
+        // Every provider answers in English exonyms for the cities big enough
+        // to have one, so a reader in Rome would be told "Rome" in the middle
+        // of an Italian sentence. See lib/italianPlaceNames.
+        return placeLabel(city, region);
       }
     } catch {
       /* try the next provider */
@@ -63,6 +70,22 @@ async function resolveCity(signal: AbortSignal): Promise<string> {
 export function Step13Revelation({ name, zodiac, onContinue, progressPct }: Props) {
   const stage = useStagedReveal(SEQUENCE);
   const [location, setLocation] = useState('');
+  /**
+   * The card image has finished decoding.
+   *
+   * The handwriting is DOM text positioned over the photograph, so it paints
+   * the frame it mounts while the image is still arriving - the reader saw her
+   * own name written on an empty beige rectangle. Gating the whole block on
+   * the image means the two can never arrive out of order.
+   */
+  const [cardReady, setCardReady] = useState(false);
+
+  /**
+   * Starts fetching the card the moment the step mounts, rather than at the
+   * 2.8s mark where `stage > 1` finally renders the <img>. Nothing about the
+   * staged reveal changes - the bytes just stop waiting for it.
+   */
+  preload(CARD_SRC, { as: 'image' });
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -104,14 +127,14 @@ export function Step13Revelation({ name, zodiac, onContinue, progressPct }: Prop
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="lr-avatar" src={AURA_AVATAR} alt="Maestra Aura" />
               <p>
-                Sulla base della tua carta natale, sto preparando il ritratto della tua
-                anima gemella. Inizio proprio ora 👇🔮
+                Sulla base del tuo tema natale, sto preparando il ritratto della tua
+                anima gemella. <strong>Comincio proprio ora…</strong> 👇🔮
               </p>
             </div>
           )}
 
           {stage > 1 && (
-            <div className="lr-image">
+            <div className={`lr-image${cardReady ? ' lr-card-ready' : ''}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {/* Was a 2.04MB PNG — the format was the whole problem: PNG stores a
                   photograph losslessly, and this one carries no transparency
@@ -124,7 +147,17 @@ export function Step13Revelation({ name, zodiac, onContinue, progressPct }: Prop
                   the handwriting. It also must not be resampled at all: the
                   overlay is positioned in percentages over this image, so any
                   change in ratio would slide the text off the card. */}
-              <img className="lr-bg" src="/images/carta-italia.webp" alt="Rivelazione" decoding="async" />
+              <img
+                className="lr-bg"
+                src={CARD_SRC}
+                alt="Rivelazione"
+                decoding="async"
+                onLoad={() => setCardReady(true)}
+                // A card that fails to load must not take the reader's name
+                // down with it: reveal the block anyway and let the gradient
+                // placeholder stand in for the photograph.
+                onError={() => setCardReady(true)}
+              />
               <div className="lr-overlay">
                 <span className="lr-line">Nome: <strong>{name || 'Il tuo nome'}</strong></span>
                 <span className="lr-line">Data di nascita: <strong>{birthDateFromSign(zodiac)}</strong></span>
@@ -142,15 +175,15 @@ export function Step13Revelation({ name, zodiac, onContinue, progressPct }: Prop
                   <p>
                     {location ? (
                       <>
-                        La tua carta natale indica che incontrerai la tua anima gemella
+                        Il tuo tema natale indica che incontrerai la tua anima gemella
                         vicino a 📍<strong>{location}</strong>. Ho preparato una rivelazione
-                        speciale per te: guardiamola subito. ✨
+                        speciale per te: scopriamola subito ✨
                       </>
                     ) : (
                       <>
-                        La tua carta natale indica che incontrerai la tua anima gemella
+                        Il tuo tema natale indica che incontrerai la tua anima gemella
                         molto vicino a <strong>dove ti trovi in questo momento</strong>. Ho
-                        preparato una rivelazione speciale per te: guardiamola subito. ✨
+                        preparato una rivelazione speciale per te: scopriamola subito ✨
                       </>
                     )}
                   </p>
@@ -158,7 +191,7 @@ export function Step13Revelation({ name, zodiac, onContinue, progressPct }: Prop
               </div>
 
               <button className="lr-btn" onClick={onContinue} type="button">
-                Scopri il volto della mia anima gemella
+                Voglio scoprire il volto della mia anima gemella
               </button>
             </>
           )}

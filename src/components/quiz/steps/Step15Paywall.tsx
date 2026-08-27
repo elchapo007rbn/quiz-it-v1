@@ -4,6 +4,7 @@ import Script from 'next/script';
 import { VTURB_PLAYER_SRC } from '../VturbPreload';
 import { readSession, writeSession, gateRemaining } from '@/lib/session';
 import { readVturbSeconds } from '@/lib/vturbTime';
+import { RevealTimer } from './RevealTimer';
 import { trackFunnelEvent } from '@/lib/tracking';
 import {
   FAQ_ITEMS,
@@ -192,11 +193,11 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
       {/* ── VSL HERO ─────────────────────────────────────────── */}
       <div className="pw-vsl-hero">
         <div style={{ textAlign: 'center' }}>
-          <span className="pw-vsl-kicker">✨ La tua lettura personale è pronta</span>
+          <RevealTimer revealAt={REVEAL_AT} done={revealed} />
           <h1 className="pw-vsl-title">
-            La Lettura della Tua Anima Gemella<br /><em>È Pronta per Essere Svelata</em>
+            <em>Il volto della tua anima gemella</em> ti sarà rivelato alla fine di questo breve video
           </h1>
-          <p className="pw-vsl-sub">Guarda il video qui sotto e scopri la tua strada verso l’amore vero</p>
+          <p className="pw-vsl-sub">Guarda il video fino alla fine, c’è qualcosa che le impedisce di arrivare da te…</p>
           {/* Vturb embed, 1:1 — the same ratio the local vsl.mp4 and the Panda
               iframe before it rendered at, so the block keeps its exact height.
               Unlike that iframe, the ratio box is the vendor's own placeholder

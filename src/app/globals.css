@@ -78,10 +78,6 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.035); }
 }
-@keyframes marquee {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(-50%, 0, 0); }
-}
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .animate-fade-up { animation: fadeUp 0.5s ease; }
@@ -101,12 +97,86 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
 .s00-img { width: 160px; border-radius: 12px; display: block; margin: 0 auto 28px; }
 .s00-cta { display: block; width: calc(100% - 32px); max-width: 360px; margin: 16px auto 0; padding: 18px 32px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; font-size: 18px; font-weight: 700; border: none; border-radius: 9999px; cursor: pointer; box-shadow: 0 4px 15px rgba(124, 58, 237, .3); transition: all .3s; animation: pulse 2s infinite; }
 .s00-cta:hover { background: linear-gradient(135deg, #7c3aed, #6d28d9); box-shadow: 0 6px 20px rgba(124, 58, 237, .4); transform: scale(1.02); }
-.s00-marquee { width: 100%; max-width: 480px; height: 28px; margin: 24px auto 0; position: relative; overflow: hidden; contain: layout paint size; }
-.s00-marquee::before, .s00-marquee::after { content: ''; position: absolute; top: 0; bottom: 0; width: 60px; z-index: 2; pointer-events: none; }
-.s00-marquee::before { left: 0; background: linear-gradient(to right, #faf5ff, transparent); }
-.s00-marquee::after { right: 0; background: linear-gradient(to left, #faf5ff, transparent); }
-.s00-marquee-track { position: absolute; top: 0; left: 0; display: flex; align-items: center; gap: 40px; width: max-content; animation: marquee 18s linear infinite; will-change: transform; }
-.s00-logo { height: 28px; width: auto; opacity: .35; filter: grayscale(100%); flex-shrink: 0; object-fit: contain; }
+/* A framed strip with a fixed label and the mastheads scrolling beside it.
+   Sized for the TikTok sheet: 360px wide at its narrowest, where a 544px
+   reference layout has to give up about a third of everything. */
+.s00-marquee {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 480px;
+  height: 40px;
+  margin: 22px auto 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  contain: layout paint;
+}
+
+.s00-marquee-label {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px 0 11px;
+  border-right: 1px solid #8BA0BF;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: .03em;
+  text-align: right;
+  text-transform: uppercase;
+  /* The CTA's own gradient end, so the one piece of copy in this strip belongs
+     to the funnel rather than to the mastheads scrolling past it. */
+  color: #7C3AED;
+}
+
+/* A mask rather than the two gradient overlays this used to carry. The
+   gradients had to hardcode the page colour to fade into it; the mask fades to
+   transparent, so the strip keeps working if the background behind it ever
+   changes. 26px because the window is only ~200px wide inside the sheet — the
+   reference's 100px would leave almost nothing unfaded. */
+.s00-marquee-window {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
+}
+
+/* `padding-left` equal to the gap is what makes the loop seamless, and it has
+   to stay equal to it. The track holds the list twice: ten logos, nine gaps and
+   that one padding, so its width is `2L + 10·gap` and half of it is `L + 5·gap`
+   — exactly the distance from the first logo of one copy to the first of the
+   next. Drop the padding, or change one of the two without the other, and the
+   seam lands short and the strip jumps once per lap. */
+.s00-marquee-track {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-left: 14px;
+  width: max-content;
+  animation: marquee 18s linear infinite;
+  will-change: transform;
+}
+
+@keyframes marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+/* Constant motion across the full width of the strip is the shape of animation
+   this setting exists for, and a marquee has no gentler version of itself — a
+   slower one only lengthens the oscillation. It stops, and the logos stay where
+   they are. Fewer of them are visible; none of them move. */
+@media (prefers-reduced-motion: reduce) {
+  .s00-marquee-track { animation: none; }
+}
+
+/* 18px against the old 28px, and less transparent to survive it: these
+   mastheads are already a flat slate grey, where the set they replaced was
+   full colour and had luminance to spare. */
+.s00-logo { height: 18px; width: auto; opacity: .6; filter: grayscale(100%); flex-shrink: 0; object-fit: contain; }
 /* 32px, not the previous 20px: the legal line sat closer to the logo marquee
    than the marquee sits to the CTA above it (24px), so the block below read as
    attached to the logos instead of as its own footnote. 32px is already part of

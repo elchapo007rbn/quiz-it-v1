@@ -50,13 +50,24 @@ export function PauseNotice() {
     const bypass = ALWAYS_SHOW || isPauseNoticeForced();
     if (!bypass && (!isAndroidTikTok() || wasPauseNoticeSeen())) return;
 
-    // Written now rather than on dismissal. She is being asked to close the
-    // sheet and tap the link again, which reloads the page — recording the
-    // visit at dismissal would show her the notice a second time for having
-    // obeyed it.
-    if (!bypass) markPauseNoticeSeen();
+    // The write happens inside the timer, not here, and the difference matters.
+    // `QuizContainer` restores a saved session in an effect, so step 0 renders
+    // for one frame before jumping to the saved step — long enough to mount
+    // this component and run this effect. Recording the visit at that point
+    // would burn the flag for someone who never saw anything, and the notice
+    // would then stay hidden when she really does start over.
+    //
+    // Recorded on appearance rather than on dismissal for the opposite reason:
+    // she is being asked to close the sheet and tap the link again, which
+    // reloads the page, so waiting for a dismissal would show her the notice a
+    // second time precisely for having obeyed it.
+    const t = setTimeout(() => {
+      if (!bypass) markPauseNoticeSeen();
+      setMounted(true);
+    }, ENTER_DELAY_MS);
 
-    const t = setTimeout(() => setMounted(true), ENTER_DELAY_MS);
+    // Unmounting inside that window — the session restore jumping away — clears
+    // the timer, so nothing is shown and nothing is written.
     return () => clearTimeout(t);
   }, []);
 

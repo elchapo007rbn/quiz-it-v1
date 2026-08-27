@@ -9,9 +9,9 @@ import { PressMarquee } from '@/components/quiz/PressMarquee';
 import { trackFunnelEvent } from '@/lib/tracking';
 import {
   FAQ_ITEMS,
+  PAYWALL_ROWS,
   PAYWALL_BENEFITS,
   PAYWALL_CAROUSEL,
-  PAYWALL_ROWS,
   SIGN_BY_NAME,
   SOULMATE_PREVIEW,
   ZODIAC_SIGNS,
@@ -347,7 +347,19 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
 
               {/* Centred on the whole frame rather than on the portrait half,
                   so it lines up with the caption below it. */}
-              <div className="pw-acct-lock">🔒</div>
+              {/* A heart, not a second padlock. The bar at the foot of this
+                  same frame already carries one, and two locks in one 228px
+                  box say the same thing twice. This one is drawn rather than
+                  the emoji it replaced, for the reason the caption's padlock
+                  is drawn: every OS redraws that glyph its own way. */}
+              <div className="pw-acct-lock">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M12 20.4s-7.5-4.6-7.5-9.7a4.35 4.35 0 0 1 7.5-2.95 4.35 4.35 0 0 1 7.5 2.95c0 5.1-7.5 9.7-7.5 9.7Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </div>
 
               <p className="pw-acct-cap">
                 <svg className="pw-acct-cap-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -380,7 +392,7 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
                     />
                   </svg>
                 </span>
-                <span>Scelto da oltre <b>3 milioni</b> di persone.</span>
+                <span>Scelto da oltre <b>74.000</b> persone.</span>
               </li>
             </ul>
 
@@ -392,32 +404,34 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
         {/* LOCKED LIST + PRICE */}
         <div className="pw-sec" id="pwUnlock">
           <div className="pw-ct">
+            {/* One card, not two stacked: the six rows and the price are the
+                same offer, and a rule between them says that better than a gap
+                between two surfaces. */}
+            <div className="pw-block">
             <div className="pw-sec-head">
-              <span className="pw-sec-eye">Cosa contiene la tua lettura</span>
-              <h2 className="pw-sec-title">Sei rivelazioni <em>già decodificate</em> per te</h2>
-              <p className="pw-sec-sub">
-                Il profilo astrologico completo della tua anima gemella è pronto — sbloccalo qui sotto per vedere tutto.
-              </p>
+              <span className="pw-sec-eye">Decodificato dalla tua carta</span>
+              <h2 className="pw-sec-title">La Tua Lettura <em>Rivelerà:</em></h2>
+              <p className="pw-sec-sub">Due sono già aperte. Le altre quattro a un tocco.</p>
             </div>
 
-            <div className="pw-ll">
+            <div className="pw-rev">
               {PAYWALL_ROWS.map(row => (
-                <div className="pw-li" key={row.k}>
-                  <div className="pw-li-chk">✓</div>
-                  <div className="pw-li-body">
-                    <p className="pw-li-k">{row.k}</p>
-                    <p className={`pw-li-v${row.locked ? ' pw-mask' : ''}`}>{row.v}</p>
+                <div className="pw-rv" key={row.k}>
+                  <div className="pw-rv-b">
+                    <p className="pw-rv-k">{row.k}</p>
+                    <p className={`pw-rv-v${row.locked ? ' pw-rv-blur' : ''}`}>{row.v}</p>
                   </div>
-                  <span className="pw-li-pill">{row.locked ? '🔒 Bloccato' : '👁 Anteprima'}</span>
+                  <span className={`pw-rv-pill${row.locked ? '' : ' pw-rv-prev'}`}>
+                    {row.locked ? '🔒 Bloccato' : '👁 Anteprima'}
+                  </span>
                 </div>
               ))}
             </div>
 
+            <div className="pw-div" />
+
             <div className="pw-pc">
-              <p className="pw-pc-eye">Il tuo sconto esclusivo</p>
-              <p className="pw-pc-tag">
-                Sblocca la tua Lettura completa della Carta Natale dell’Anima Gemella a un prezzo unico e speciale:
-              </p>
+              <p className="pw-pc-tag">Sblocca tutte e sei le rivelazioni:</p>
               <div className="pw-pc-amount">
                 <span className="pw-pc-cur">€</span><span className="pw-pc-num">9</span>
               </div>
@@ -450,6 +464,7 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
                 contattando l’assistenza. Non sono previsti rimborsi per periodi di fatturazione
                 parziali dopo la finestra di garanzia di 7 giorni.
               </p>
+            </div>
             </div>
           </div>
         </div>

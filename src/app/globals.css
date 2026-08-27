@@ -1001,11 +1001,12 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 19px;
   transform: translate(-50%, -50%);
   box-shadow: 0 8px 22px rgba(109, 40, 217, .5), 0 0 0 6px rgba(255, 255, 255, .72);
   animation: pwAcctLock 2.4s ease-in-out infinite;
 }
+
+.pw-acct-lock svg { width: 23px; height: 23px; }
 
 @keyframes pwAcctLock {
   0%, 100% { transform: translate(-50%, -50%) scale(1); }
@@ -1061,6 +1062,71 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
   height: 13px;
   color: currentColor;
 }
+
+/* The six revelations, ported from the /dev/paywall-v2 draft. Each row is a
+   tile rather than a list item: the pill on the right needs a box to sit
+   against, and a bordered row is what stops six of them reading as one wall
+   of text. */
+.pw-rev {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.pw-rv {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ln);
+  border-radius: 12px;
+  background: #FBF9FF;
+}
+
+.pw-rv-b { flex: 1; min-width: 0; }
+
+.pw-rv-k {
+  font-size: 9.5px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--bk3);
+  margin-bottom: 2px;
+}
+
+.pw-rv-v { font-size: 14px; font-weight: 800; color: var(--p); }
+
+/* Blurred, not replaced. The old rows showed six dots, which says only "there
+   is something here"; a blurred "Acquario" says the answer is written and one
+   tap away. `user-select: none` because the text is really there - without it
+   a long-press and a copy hands the whole reading over. */
+.pw-rv-v.pw-rv-blur {
+  filter: blur(5px);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pw-rv-pill {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #F1E9FF;
+  color: var(--p);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pw-rv-pill.pw-rv-prev { background: #E9FBF0; color: var(--ok); }
+
+/* #DFD7FB, which is the card's own border colour rather than the neutral
+   hairline used everywhere else. Inside a white card the grey rule read as a
+   crack; the card's line reads as part of the same object dividing itself. */
+.pw-div { height: 1px; margin: 18px 0; background: #DFD7FB; }
 
 /* The press strip is step 0's, reused here. `.pw-wrap *` zeroes every margin
    and padding inside this step, at the same specificity as the strip's own
@@ -1604,15 +1670,20 @@ body { margin: 0; font-family: var(--font-body), 'Plus Jakarta Sans', -apple-sys
 }
 
 /* PRICE */
-.pw-pc {
+/* The card the whole offer now sits in - heading, the six rows, the rule and
+   the price. It wears exactly what .pw-pc used to wear on its own: same white,
+   same 1.5px #DFD7FB, same 22px radius. The chrome moved up one level rather
+   than being duplicated, so there is no card inside a card. */
+.pw-block {
   background: linear-gradient(180deg, #fff, #FAF8FF);
   border: 1.5px solid #DFD7FB;
   border-radius: 22px;
   padding: 24px 20px;
-  text-align: center;
   box-shadow: 0 24px 60px -30px rgba(27, 20, 70, .28);
   margin: 24px 0;
 }
+
+.pw-pc { text-align: center; }
 
 .pw-pc-eye {
   font-size: 11px;

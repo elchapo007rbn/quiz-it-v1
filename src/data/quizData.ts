@@ -221,13 +221,21 @@ export const PAYWALL_BENEFITS = [
 ] as const;
 
 /** Step 15 — the six locked/preview rows. */
+/**
+ * Real answers behind a blur, not rows of dots.
+ *
+ * A dot mask says "there is something here"; a blurred "Acquario" says "the
+ * answer is written and you are one tap from reading it". The locked ones are
+ * blurred in CSS rather than replaced, so the shape and length of the real
+ * value are what the reader sees withheld.
+ */
 export const PAYWALL_ROWS = [
-  { k: 'Iniziali dell’anima gemella', v: '••••••', locked: true },
-  { k: 'Il suo segno zodiacale', v: '•••••••', locked: true },
-  { k: 'Quando vi incontrerete', v: '••/••/2026', locked: true },
+  { k: 'Iniziali dell’anima gemella', v: 'R.M.', locked: true },
+  { k: 'Il suo segno zodiacale', v: 'Acquario', locked: true },
+  { k: 'Quando vi incontrerete', v: '11/04/2026', locked: true },
   { k: 'Tratti fisici', v: 'Alto, lineamenti scuri', locked: false },
   { k: 'Come lo riconoscerai', v: 'Uno sguardo inconfondibile', locked: false },
-  { k: 'Messaggio dalle stelle', v: '••••••••••', locked: true },
+  { k: 'Messaggio dalle stelle', v: 'Non accontentarti più', locked: true },
 ] as const;
 
 /** Step 15 — Facebook-style testimonial screenshots for the carousel. */

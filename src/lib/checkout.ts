@@ -17,6 +17,7 @@
 
 import { CLICK_ID_COOKIE, readCookie } from './tracking';
 import { clearSession } from './session';
+import { trackTikTokEvent } from './tiktok';
 
 /** Producer's checkout for this offer. Used when the redirector cannot be reached. */
 const CHECKOUT_URL = 'https://quiz.auralyapp.com/checkout-ff/509506ca';
@@ -207,6 +208,13 @@ export function goToCheckout(data: CheckoutHandoff): void {
   const now = Date.now();
   if (now - lastAttemptAt < DOUBLE_TAP_WINDOW_MS) return;
   lastAttemptAt = now;
+
+  // Below the guard, so a swallowed double tap does not report twice, and
+  // above the await, so a reader who leaves while the redirector hop is
+  // still resolving is still counted as having tried to buy. Not deduped
+  // across the session on purpose — see the note on lastAttemptAt: a
+  // genuine second attempt is a second intent to buy.
+  trackTikTokEvent('InitiateCheckout');
 
   void resolveCheckoutUrl(data).then(url => {
     // Cleared here rather than on the checkout's thank-you page, which is on

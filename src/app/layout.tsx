@@ -4,6 +4,7 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { RedTrack } from "@/components/RedTrack";
+import { TikTokPixel } from "@/components/TikTokPixel";
 
 // Every family the original funnel declares, self-hosted by next/font and exposed
 // as a CSS variable. next/font downloads the files at build time and serves them
@@ -99,6 +100,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             Placing it as a direct child of <html> is invalid markup and breaks
             hydration. See RedTrack. */}
         <RedTrack />
+        {/* TikTok Pixel. Every paid visitor on this funnel arrives from a
+            TikTok ad, so this is what the ad account optimises against.
+            Loads after hydration rather than during parse — see
+            TikTokPixel for why the two tags differ. */}
+        <TikTokPixel />
         {/* Real-user Core Web Vitals, reported with the visitor's connection
             type. That pairing is the point: this funnel is served into TikTok's
             in-app browser over mobile data, where a page that loads instantly

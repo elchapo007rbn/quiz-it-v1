@@ -7,6 +7,7 @@ import { readVturbSeconds } from '@/lib/vturbTime';
 import { RevealTimer } from './RevealTimer';
 import { PressMarquee } from '@/components/quiz/PressMarquee';
 import { trackFunnelEvent } from '@/lib/tracking';
+import { trackTikTokEvent } from '@/lib/tiktok';
 import {
   FAQ_ITEMS,
   PAYWALL_ROWS,
@@ -123,6 +124,10 @@ export function Step15Paywall({ name, zodiac, interest, onCheckout }: Props) {
    */
   useEffect(() => {
     trackFunnelEvent('EndQuiz');
+    // The same instant, reported to the ad account: the offer is on
+    // screen. `once` because a restored session mounts this again, and
+    // one reader seeing the offer twice is not two readers.
+    trackTikTokEvent('ViewContent', { once: true });
   }, []);
 
   /**
